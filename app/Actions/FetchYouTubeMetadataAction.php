@@ -14,8 +14,8 @@ class FetchYouTubeMetadataAction
      * 動画のURLまたはIDからYouTubeのメタデータを取得します。
      *
      * @param string $urlOrId YouTubeのURLまたは動画ID
-     * @param array $parts 取得するメタデータのパーツ（デフォルトはプレビュー用）PARTS_PREVIEWまたはPARTS_FULLを使用
-     * @return array 動画のメタデータ（タイトル、概要、サムネイルなど）
+     * @param array<string> $parts 取得するメタデータのパーツ（デフォルトはプレビュー用）PARTS_PREVIEWまたはPARTS_FULLを使用
+     * @return array<string, mixed> 動画のメタデータ（タイトル、概要、サムネイルなど）
      * @throws Exception 取得失敗時
      */
     public function execute(string $urlOrId, array $parts = self::PARTS_PREVIEW): array
@@ -71,6 +71,9 @@ class FetchYouTubeMetadataAction
      * - https://www.youtube.com/watch?v=dQw4w9WgXcQ
      * - https://youtu.be/dQw4w9WgXcQ
      * - dQw4w9WgXcQ (ID直接)
+     * @param string $urlOrId YouTubeのURLまたは動画ID
+     * @return string 抽出された動画ID
+     * @throws Exception 抽出失敗時
      */
     private function extractVideoId(string $urlOrId): string
     {
@@ -89,8 +92,8 @@ class FetchYouTubeMetadataAction
      * WikipediaのURLリストから、トピック名だけを抽出する
      * 例: https://en.wikipedia.org/wiki/Lifestyle_(sociology) -> "Lifestyle (sociology)"
      * 
-     * @param array $urls WikipediaのURLリスト
-     * @return array 抽出されたトピック名のリスト
+     * @param array<string> $urls WikipediaのURLリスト
+     * @return array<string> 抽出されたトピック名のリスト
      */
     private function extractTopicNames(array $urls): array
     {

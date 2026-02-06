@@ -7,6 +7,7 @@ use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
 use App\Http\Controllers\Controller;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -17,9 +18,9 @@ class VideoController extends Controller
      *
      * @param Request $request
      * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
-     * @return void
+     * @return JsonResponse
      */
-    public function preview(Request $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata)
+    public function preview(Request $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): JsonResponse
     {
         $request->validate([
             'video_url' => 'required|string',
@@ -41,14 +42,15 @@ class VideoController extends Controller
      * @param Request $request
      * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
      * @param YouTubeMetadataStoreAction $youTubeMetadataStore
-     * @return void
+     * @param FetchChannelInfoAction $fetchChannelInfo
+     * @return JsonResponse
      */
     public function store(
         Request $request,
         FetchYouTubeMetadataAction $fetchYouTubeMetadata,
         FetchChannelInfoAction $fetchChannelInfo,
         YouTubeMetadataStoreAction $youTubeMetadataStore
-    ) {
+    ): JsonResponse {
         $request->validate([
             'video_url' => 'required|string',
         ]);

@@ -11,7 +11,7 @@ class YouTubeMetadataStoreAction
     /**
      * YouTube動画のメタデータを保存する
      * 
-     * @param array $metadata
+     * @param array<string, mixed> $metadata
      * @return Video
      */
     public function execute(array $metadata): Video

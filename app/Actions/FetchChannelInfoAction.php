@@ -10,7 +10,7 @@ class FetchChannelInfoAction
      * YouTubeチャンネル情報を取得する
      * 
      * @param string $channelId
-     * @return array
+     * @return array<string, mixed>
      */
     public function execute(string $channelId): array
     {
