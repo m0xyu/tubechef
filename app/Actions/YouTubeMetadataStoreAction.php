@@ -22,6 +22,7 @@ class YouTubeMetadataStoreAction
                 ['channel_id' => $metadata['channel_id']],
                 [
                     'name' => $metadata['channel_name'],
+                    'description' => $metadata['channel_description'],
                     'thumbnail_url' => $metadata['channel_thumbnail_url'],
                     'custom_url' => $metadata['channel_custom_url'],
                     'subscriber_count' => $metadata['subscriber_count'],
