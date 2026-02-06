@@ -8,3 +8,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/videos/preview', [App\Http\Controllers\VideoController::class, 'preview']);
+Route::post('/videos/store', [App\Http\Controllers\VideoController::class, 'store']);
