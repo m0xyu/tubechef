@@ -42,6 +42,7 @@ class Channel extends Model
         'name',
         'thumbnail_url',
         'custom_url',
+        'description',
         'subscriber_count',
         'view_count',
         'video_count',
