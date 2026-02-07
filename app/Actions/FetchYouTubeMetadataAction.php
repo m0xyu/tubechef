@@ -2,6 +2,8 @@
 
 namespace App\Actions;
 
+use App\Enums\Errors\VideoError;
+use App\Exceptions\VideoException;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
@@ -11,16 +13,16 @@ class FetchYouTubeMetadataAction
     public const PARTS_FULL = ['snippet', 'contentDetails', 'statistics', 'topicDetails'];
 
     /**
-     * 動画のURLまたはIDからYouTubeのメタデータを取得します。
+     * 動画のURLからYouTubeのメタデータを取得します。
      *
-     * @param string $urlOrId YouTubeのURLまたは動画ID
+     * @param string $url YouTubeのURL
      * @param array<string> $parts 取得するメタデータのパーツ（デフォルトはプレビュー用）PARTS_PREVIEWまたはPARTS_FULLを使用
      * @return array<string, mixed> 動画のメタデータ（タイトル、概要、サムネイルなど）
      * @throws Exception 取得失敗時
      */
-    public function execute(string $urlOrId, array $parts = self::PARTS_PREVIEW): array
+    public function execute(string $url, array $parts = self::PARTS_PREVIEW): array
     {
-        $videoId = $this->extractVideoId($urlOrId);
+        $videoId = $this->extractVideoId($url);
 
         $apiKey = config('services.google.api_key');
         $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
@@ -30,14 +32,14 @@ class FetchYouTubeMetadataAction
         ]);
 
         if ($response->failed() || empty($response->json('items'))) {
-            throw new Exception('Failed to fetch YouTube metadata.');
+            throw new VideoException(VideoError::FETCH_FAILED);
         }
 
         $item = $response->json('items.0');
 
         $kind = $item['kind'] ?? null;
         if ($kind !== 'youtube#video') {
-            throw new Exception('The provided ID does not correspond to a YouTube video.');
+            throw new VideoException(VideoError::NOT_A_VIDEO);
         }
 
         $snippet = $item['snippet'] ?? [];
@@ -71,21 +73,21 @@ class FetchYouTubeMetadataAction
      * - https://www.youtube.com/watch?v=dQw4w9WgXcQ
      * - https://youtu.be/dQw4w9WgXcQ
      * - dQw4w9WgXcQ (ID直接)
-     * @param string $urlOrId YouTubeのURLまたは動画ID
+     * @param string $url YouTubeのURLまたは動画ID
      * @return string 抽出された動画ID
-     * @throws Exception 抽出失敗時
+     * @throws VideoException 動画IDが抽出できない場合
      */
-    private function extractVideoId(string $urlOrId): string
+    private function extractVideoId(string $url): string
     {
-        if (preg_match('/^[\w-]{11}$/', $urlOrId)) {
-            return $urlOrId;
+        if (preg_match('/^[\w-]{11}$/', $url)) {
+            return $url;
         }
 
-        if (preg_match('/(?:v=|\/)([\w-]{11})(?:&|\?|\/|$)/', $urlOrId, $matches)) {
+        if (preg_match('/(?:v=|\/)([\w-]{11})(?:&|\?|\/|$)/', $url, $matches)) {
             return $matches[1];
         }
 
-        throw new Exception('有効なYouTube URLまたは動画IDではありません。');
+        throw new VideoException(VideoError::INVALID_ID);
     }
 
     /**

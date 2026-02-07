@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereVideoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereViewCount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereCategoryId($value)
  * @mixin \Eloquent
  */
 class Video extends Model
@@ -53,6 +54,7 @@ class Video extends Model
         'like_count',
         'comment_count',
         'topic_categories',
+        'category_id',
         'channel_id',
         'duration',
         'published_at',

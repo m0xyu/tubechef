@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class FetchChannelInfoAction
 {
@@ -23,18 +24,25 @@ class FetchChannelInfoAction
         ]);
 
         if ($response->failed() || empty($response->json('items'))) {
+            Log::warning("Failed to fetch channel info for ID: {$channelId}", [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+
             return [];
         }
 
         $item = $response->json('items.0');
+        $snippet = $item['snippet'] ?? [];
+        $statistics = $item['statistics'] ?? [];
 
         return [
-            'channel_description' => $item['snippet']['description'] ?? null,
-            'channel_custom_url' => $item['snippet']['customUrl'] ?? null,
-            'channel_thumbnail_url' => $item['snippet']['thumbnails']['high']['url'] ?? $item['snippet']['thumbnails']['default']['url'],
-            'subscriber_count' => $item['statistics']['subscriberCount'] ?? null,
-            'channel_view_count' => $item['statistics']['viewCount'] ?? null,
-            'channel_video_count' => $item['statistics']['videoCount'] ?? null,
+            'channel_description' => $snippet['description'] ?? null,
+            'channel_custom_url' => $snippet['customUrl'] ?? null,
+            'channel_thumbnail_url' => $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['default']['url'] ?? null,
+            'subscriber_count' => $statistics['subscriberCount'] ?? null,
+            'channel_view_count' => $statistics['viewCount'] ?? null,
+            'channel_video_count' => $statistics['videoCount'] ?? null,
         ];
     }
 }

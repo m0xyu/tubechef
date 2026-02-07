@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedBigInteger('comment_count')->nullable();
             $table->json('topic_categories')->nullable();
             $table->timestamp('fetched_at')->useCurrent();
+            $table->string('category_id')->nullable()->comment('YouTubeカテゴリID');
             $table->unsignedInteger('duration')->nullable()->comment('動画の長さ（秒）');
             $table->timestamps();
 
