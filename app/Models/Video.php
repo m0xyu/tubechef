@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $comment_count
  * @property array<array-key, mixed>|null $topic_categories
  * @property \Illuminate\Support\Carbon $fetched_at
+ * @property string|null $category_id YouTubeカテゴリID
  * @property int|null $duration 動画の長さ（秒）
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereCategoryId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereChannelId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereCommentCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereCreatedAt($value)
@@ -40,7 +42,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereVideoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereViewCount($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereCategoryId($value)
  * @mixin \Eloquent
  */
 class Video extends Model
