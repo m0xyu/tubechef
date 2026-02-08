@@ -41,7 +41,7 @@ describe('GeminiService', function () {
         ]);
 
         $service = new GeminiService();
-        $result = $service->generateRecipe('Curry Video', 'How to make curry');
+        $result = $service->generateRecipe('Curry Video', 'How to make curry', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
         expect($result['title'])->toBe('Delicious Curry');
         expect($result['ingredients'][0]['name'])->toBe('Chicken');
@@ -55,7 +55,7 @@ describe('GeminiService', function () {
 
         $service = new GeminiService();
 
-        expect(fn() => $service->generateRecipe('Video', 'Desc'))
+        expect(fn() => $service->generateRecipe('Video', 'Desc', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
             ->toThrow(Exception::class);
     });
 });

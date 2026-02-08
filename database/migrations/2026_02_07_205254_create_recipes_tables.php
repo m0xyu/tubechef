@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('dishes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('parent_id')->nullable()->constrained('dishes')->onDelete('set null');
-            $table->string('name')->unique();
+            $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->timestamps();

@@ -25,10 +25,11 @@ class GeminiService
      *
      * @param string $title 動画タイトル
      * @param string $description 動画概要欄
+     * @param string $videoUrl 動画のURL
      * @return array<string, mixed> 生成されたレシピデータ
      * @throws Exception
      */
-    public function generateRecipe(string $title, string $description): array
+    public function generateRecipe(string $title, string $description, string $videoUrl): array
     {
         $recipeSchema = [
             'type' => 'OBJECT',
@@ -67,9 +68,18 @@ class GeminiService
                                 'description' => '材料のグループ（例: 具材, 調味料, トッピング）。分類不可ならnull',
                                 'nullable' => true,
                             ],
+                            'order' => ['type' => 'INTEGER', 'description' => '表示順'],
                         ],
                         'required' => ['name'],
                     ],
+                ],
+                'dish_name' => [
+                    'type' => 'STRING',
+                    'description' => '料理の名前だけ。動画タイトルや概要欄から抽出。タイトルと異なる場合もある。シンプルで一般的な名前にして。',
+                ],
+                'dish_slug' => [
+                    'type' => 'STRING',
+                    'description' => '料理名のスラッグ（英数字とハイフンのみ）',
                 ],
                 'steps' => [
                     'type' => 'ARRAY',
@@ -77,9 +87,18 @@ class GeminiService
                         'type' => 'OBJECT',
                         'properties' => [
                             'step_number' => ['type' => 'INTEGER'],
+                            'start_time_in_seconds' => [
+                                'type' => 'INTEGER',
+                                'description' => '手順の開始時間（秒）。不明な場合はnull',
+                            ],
+                            'end_time_in_seconds' => [
+                                'type' => 'INTEGER',
+                                'description' => '手順の終了時間（秒）。不明な場合はnull',
+                                'nullable' => true,
+                            ],
                             'description' => ['type' => 'STRING', 'description' => '手順の説明'],
                         ],
-                        'required' => ['step_number', 'description'],
+                        'required' => ['step_number', 'description', 'start_time_in_seconds'],
                     ],
                 ],
                 'tips' => [
@@ -89,19 +108,25 @@ class GeminiService
                         'properties' => [
                             'description' => ['type' => 'STRING', 'description' => 'コツやポイント'],
                             'related_step_number' => ['type' => 'INTEGER', 'nullable' => true],
+                            'start_time_in_seconds' => [
+                                'type' => 'INTEGER',
+                                'description' => 'コツが紹介される開始時間（秒）特に重要なコツを最大3つまで。不明な場合はnull',
+                                'nullable' => true,
+                            ],
                         ],
                         'required' => ['description'],
                     ],
                 ],
             ],
-            'required' => ['is_recipe', 'title', 'ingredients', 'steps'],
+            'required' => ['is_recipe', 'title', 'ingredients', 'steps', 'dish_name', 'dish_slug'],
         ];
 
         $systemInstruction = <<<EOT
             あなたはプロの料理研究家兼データエンジニアです。
-            ユーザーから提供される「YouTube動画のタイトル」と「概要欄」を分析し、正確なレシピデータを抽出してください。
+            提供される「YouTube動画（映像・音声）」および「タイトル・概要欄」を総合的に分析し、正確なレシピデータを抽出してください。
+            概要欄に分量や手順が記載されていない場合は、動画内の映像や音声解説から情報を補完してください。
             料理動画ではない場合（ゲーム実況やニュースなど）は、is_recipeをfalseにしてください。
-            EOT;
+        EOT;
 
         $userPrompt = <<<EOT
             ## 動画タイトル
@@ -118,7 +143,12 @@ class GeminiService
             'contents' => [
                 [
                     'parts' => [
-                        ['text' => $systemInstruction . "\n\n" . $userPrompt]
+                        ['text' => $systemInstruction . "\n\n" . $userPrompt],
+                        [
+                            'file_data' => [
+                                'file_uri' => $videoUrl
+                            ]
+                        ]
                     ]
                 ]
             ],
