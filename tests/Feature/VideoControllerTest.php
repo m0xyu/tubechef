@@ -1,6 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Enums\RecipeGenerationStatus;
+use App\Jobs\GenerateRecipeJob;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Http;
 
 use function Pest\Laravel\postJson;
@@ -87,6 +89,8 @@ describe('Video Controller: preview', function () {
 
 describe('Video Controller: store', function () {
     test('valid url stores video metadata successfully', function () {
+        Queue::fake();
+
         Http::fake([
             '*/youtube/v3/videos*' => Http::response([
                 'items' => [[
@@ -166,6 +170,7 @@ describe('Video Controller: store', function () {
                     'fetched_at',
                     'created_at',
                     'updated_at',
+                    'recipe_generation_status',
                 ]
             ]);
 
@@ -180,6 +185,7 @@ describe('Video Controller: store', function () {
             'title' => 'Delicious Curry',
             'view_count' => 1000,
             'duration' => 930,
+            'recipe_generation_status' => RecipeGenerationStatus::PROCESSING->value,
         ]);
     });
 });

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\FetchChannelInfoAction;
 use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
+use App\Enums\RecipeGenerationStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateRecipeJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,7 +23,7 @@ class VideoController extends Controller
     public function preview(Request $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): JsonResponse
     {
         $request->validate([
-            'video_url' => 'required|string',
+            'video_url' => 'required|string|url',
         ]);
 
         $metadata = $fetchYouTubeMetadata->execute($request->input('video_url'));
@@ -41,10 +43,10 @@ class VideoController extends Controller
         Request $request,
         FetchYouTubeMetadataAction $fetchYouTubeMetadata,
         FetchChannelInfoAction $fetchChannelInfo,
-        YouTubeMetadataStoreAction $youTubeMetadataStore
+        YouTubeMetadataStoreAction $youTubeMetadataStore,
     ): JsonResponse {
         $request->validate([
-            'video_url' => 'required|string',
+            'video_url' => 'required|string|url',
         ]);
 
         $metadata = $fetchYouTubeMetadata->execute(
@@ -55,6 +57,9 @@ class VideoController extends Controller
         $channelInfo = $fetchChannelInfo->execute($metadata['channel_id']);
         $metadata = array_merge($metadata, $channelInfo);
         $video = $youTubeMetadataStore->execute($metadata);
+
+        $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
+        GenerateRecipeJob::dispatch($video);
 
         return response()->json(['success' => true, 'data' => $video]);
     }

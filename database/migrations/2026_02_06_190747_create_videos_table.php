@@ -26,6 +26,8 @@ return new class extends Migration
             $table->timestamp('fetched_at')->useCurrent();
             $table->string('category_id')->nullable()->comment('YouTubeカテゴリID');
             $table->unsignedInteger('duration')->nullable()->comment('動画の長さ（秒）');
+            $table->string('recipe_generation_status')->default('pending');
+            $table->text('recipe_generation_error_message')->nullable();
             $table->timestamps();
 
             $table->index('view_count');
