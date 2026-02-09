@@ -12,6 +12,7 @@ use App\Http\Resources\VideoPreviewResource;
 use App\Http\Resources\VideoResource;
 use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
 {
@@ -62,5 +63,23 @@ class VideoController extends Controller
         $video->load('channel');
         return (new VideoResource($video))
             ->additional(['success' => true]);
+    }
+
+    /**
+     * 動画のレシピ生成ステータスを確認する（ポーリング用）
+     *
+     * @param string $videoId (YouTubeのID または DBのID)
+     * @return JsonResponse
+     */
+    public function checkStatus(string $videoId): JsonResponse
+    {
+        $video = Video::where('video_id', $videoId)
+            ->select(['id', 'video_id', 'recipe_generation_status', 'recipe_generation_error_message'])
+            ->firstOrFail();
+
+        return response()->json([
+            'status' => $video->recipe_generation_status,
+            'error_message' => $video->recipe_generation_error_message,
+        ]);
     }
 }
