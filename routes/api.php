@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\VideoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,5 +12,10 @@ Route::get('/user', function (Request $request) {
 Route::prefix('/videos')->name('videos.')->group(function () {
     Route::post('/preview', [VideoController::class, 'preview'])->name('preview');
     Route::post('/', [VideoController::class, 'store'])->name('store');
-    Route::get('/videos/{videoId}/status', [VideoController::class, 'checkStatus'])->name('checkStatus');
+    Route::get('/{videoId}/status', [VideoController::class, 'checkStatus'])->name('checkStatus');
+});
+
+Route::prefix('/recipes')->name('recipes.')->group(function () {
+    Route::get('/', [RecipeController::class, 'index'])->name('index');
+    Route::get('/{recipe:slug}', [RecipeController::class, 'show'])->name('show');
 });
