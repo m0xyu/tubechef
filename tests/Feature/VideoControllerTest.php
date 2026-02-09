@@ -43,7 +43,6 @@ describe('Video Controller: preview', function () {
                 'data' => [
                     'title' => 'Delicious Curry',
                     'duration' => 930,
-                    'category_id' => '10',
                 ]
             ])
             ->assertJsonStructure([
@@ -51,13 +50,14 @@ describe('Video Controller: preview', function () {
                 'data' => [
                     'video_id',
                     'title',
-                    'channel_name',
-                    'channel_id',
-                    'category_id',
                     'description',
                     'thumbnail_url',
                     'published_at',
                     'duration',
+                    'channel' => [
+                        'id',
+                        'name',
+                    ]
                 ]
             ]);
     });
@@ -144,7 +144,7 @@ describe('Video Controller: store', function () {
             'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
                 'data' => [
@@ -156,9 +156,8 @@ describe('Video Controller: store', function () {
                 'success',
                 'data' => [
                     'id',
+                    'video_id',
                     'title',
-                    'channel_id',
-                    'category_id',
                     'description',
                     'thumbnail_url',
                     'published_at',
@@ -167,10 +166,14 @@ describe('Video Controller: store', function () {
                     'like_count',
                     'comment_count',
                     'topic_categories',
-                    'fetched_at',
-                    'created_at',
-                    'updated_at',
                     'recipe_generation_status',
+                    'recipe_generation_status_message',
+                    'channel' =>  [
+                        'channel_id',
+                        'name',
+                        'custom_url',
+                        'thumbnail_url',
+                    ]
                 ]
             ]);
 
