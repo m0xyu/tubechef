@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\Errors\RecipeError;
+use App\Exceptions\RecipeException;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Http;
@@ -160,8 +162,18 @@ class GeminiService
         ]);
 
         if ($response->failed()) {
-            Log::error('Gemini API Error', ['body' => $response->body()]);
-            throw new Exception('Gemini API request failed: ' . $response->status());
+            $status = $response->status();
+            $body = $response->body();
+
+            Log::error("Gemini API Error: {$status}", ['body' => $body]);
+            if ($status === 429 || $status >= 500) {
+                throw new Exception("Gemini API Server Error ({$status}): Temporary failure, retrying.");
+            }
+
+            throw new RecipeException(
+                RecipeError::GENERATION_FAILED,
+                "Gemini API Client Error ({$status}): Check API Key or Request format."
+            );
         }
 
         $responseData = $response->json();
