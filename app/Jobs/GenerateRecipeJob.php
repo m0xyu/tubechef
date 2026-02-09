@@ -4,12 +4,15 @@ namespace App\Jobs;
 
 use App\Actions\GenerateRecipeAction;
 use App\Enums\RecipeGenerationStatus;
+use App\Exceptions\RecipeException;
 use App\Models\Video;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class GenerateRecipeJob implements ShouldQueue
 {
@@ -21,6 +24,8 @@ class GenerateRecipeJob implements ShouldQueue
     public $maxExceptions = 3;
     /** @var int */
     public $timeout = 120;
+    /** @var int */
+    public int $backoff = 10;
 
     /**
      * @var Video $video
@@ -43,19 +48,39 @@ class GenerateRecipeJob implements ShouldQueue
      */
     public function handle(GenerateRecipeAction $generateRecipeAction): void
     {
-        $generateRecipeAction->execute($this->video);
+        Log::info("Job開始: VideoID {$this->video->video_id}");
+
+        try {
+            if ($this->video->recipe_generation_status !== RecipeGenerationStatus::PROCESSING) {
+                $this->video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
+            }
+
+            $generateRecipeAction->execute($this->video);
+
+            Log::info("Job完了: VideoID {$this->video->video_id}");
+        } catch (RecipeException $e) {
+            Log::warning("生成失敗(リトライなし): {$e->getMessage()}");
+
+            $this->video->update([
+                'recipe_generation_status' => RecipeGenerationStatus::FAILED,
+                'recipe_generation_error_message' => $e->getMessage(),
+            ]);
+        } catch (Throwable $e) {
+            Log::error("システムエラー(リトライ対象): {$e->getMessage()}");
+            throw $e; // Laravelがこれを検知してリトライ処理に回す
+        }
     }
 
     /**
      * Handle a job failure.
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return void
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         $this->video->update([
             'recipe_generation_status' => RecipeGenerationStatus::FAILED,
-            'recipe_error_message' => $exception->getMessage(),
+            'recipe_generation_error_message' => $exception->getMessage(),
         ]);
     }
 }

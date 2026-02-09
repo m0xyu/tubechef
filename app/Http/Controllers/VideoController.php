@@ -7,50 +7,49 @@ use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
 use App\Enums\RecipeGenerationStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\VideoUrlRequest;
+use App\Http\Resources\VideoPreviewResource;
+use App\Http\Resources\VideoResource;
 use App\Jobs\GenerateRecipeJob;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Models\Video;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
 {
     /**
      * 入力されたYouTube動画のプレビュー用メタデータを返す
      *
-     * @param Request $request
+     * @param VideoUrlRequest $request
      * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
-     * @return JsonResponse
+     * @return VideoPreviewResource
      */
-    public function preview(Request $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): JsonResponse
+    public function preview(VideoUrlRequest $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): VideoPreviewResource
     {
-        $request->validate([
-            'video_url' => 'required|string|url',
-        ]);
+        $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
+        $video = (new Video())->forceFill($metadata);
 
-        $metadata = $fetchYouTubeMetadata->execute($request->input('video_url'));
-        return response()->json(['success' => true, 'data' => $metadata]);
+        return (new VideoPreviewResource($video))
+            ->additional(['success' => true]);
     }
 
     /**
      * YouTube動画のメタデータを保存する
      *
-     * @param Request $request
+     * @param VideoUrlRequest $request
      * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
      * @param YouTubeMetadataStoreAction $youTubeMetadataStore
      * @param FetchChannelInfoAction $fetchChannelInfo
-     * @return JsonResponse
+     * @return VideoResource
      */
     public function store(
-        Request $request,
+        VideoUrlRequest $request,
         FetchYouTubeMetadataAction $fetchYouTubeMetadata,
         FetchChannelInfoAction $fetchChannelInfo,
         YouTubeMetadataStoreAction $youTubeMetadataStore,
-    ): JsonResponse {
-        $request->validate([
-            'video_url' => 'required|string|url',
-        ]);
+    ): VideoResource {
 
         $metadata = $fetchYouTubeMetadata->execute(
-            $request->input('video_url'),
+            $request->getVideoUrl(),
             FetchYouTubeMetadataAction::PARTS_FULL
         );
 
@@ -61,6 +60,26 @@ class VideoController extends Controller
         $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
         GenerateRecipeJob::dispatch($video);
 
-        return response()->json(['success' => true, 'data' => $video]);
+        $video->load('channel');
+        return (new VideoResource($video))
+            ->additional(['success' => true]);
+    }
+
+    /**
+     * 動画のレシピ生成ステータスを確認する（ポーリング用）
+     *
+     * @param string $videoId (YouTubeのID または DBのID)
+     * @return JsonResponse
+     */
+    public function checkStatus(string $videoId): JsonResponse
+    {
+        $video = Video::where('video_id', $videoId)
+            ->select(['id', 'video_id', 'recipe_generation_status', 'recipe_generation_error_message'])
+            ->firstOrFail();
+
+        return response()->json([
+            'status' => $video->recipe_generation_status,
+            'error_message' => $video->recipe_generation_error_message,
+        ]);
     }
 }
