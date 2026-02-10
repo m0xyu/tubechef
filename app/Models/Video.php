@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RecipeGenerationStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -51,10 +52,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereVideoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereViewCount($value)
+ * @method static \Database\Factories\VideoFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Video extends Model
 {
+    /** @use HasFactory<\Database\Factories\VideoFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'video_id',
         'title',

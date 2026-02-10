@@ -1,13 +1,16 @@
 <?php
 
-use App\Services\GeminiService;
+use App\Services\LLM\GeminiService;
+use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\Facades\Http;
 
 describe('GeminiService', function () {
+    test('it implements LLMServiceInterface', function () {
+        $service = new GeminiService();
+        expect($service)->toBeInstanceOf(LLMServiceInterface::class);
+    });
 
     test('valid response generates recipe data', function () {
-        // 1. Geminiからの正常なレスポンスをモック（偽装）する
-        // 実際のAPIは叩かず、このJSONが返ってきたと仮定します
         $mockResponse = [
             'candidates' => [
                 [

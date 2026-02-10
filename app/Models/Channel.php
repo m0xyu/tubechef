@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -33,10 +34,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereVideoCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereViewCount($value)
+ * @method static \Database\Factories\ChannelFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Channel extends Model
 {
+    /** @use HasFactory<\Database\Factories\ChannelFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'channel_id',
         'name',

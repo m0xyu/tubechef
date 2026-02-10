@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\LLM;
 
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
+use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
-class GeminiService
+class GeminiService implements LLMServiceInterface
 {
     private string $apiKey;
     private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';

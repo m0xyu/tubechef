@@ -8,7 +8,8 @@ use App\Exceptions\RecipeException;
 use App\Models\Dish;
 use App\Models\Recipe;
 use App\Models\Video;
-use App\Services\GeminiService;
+use App\Services\LLM\LLMServiceFactory;
+use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -16,9 +17,13 @@ use Throwable;
 
 class GenerateRecipeAction
 {
+    protected LLMServiceInterface $llmService;
+
     public function __construct(
-        protected GeminiService $geminiService
-    ) {}
+        LLMServiceFactory $factory
+    ) {
+        $this->llmService = $factory->make();
+    }
 
     /**
      * 動画のタイトルと説明文からレシピを生成し、保存する
@@ -33,7 +38,7 @@ class GenerateRecipeAction
         }
 
         try {
-            $result = $this->geminiService->generateRecipe($video->title, $video->description ?? '', $video->url);
+            $result = $this->llmService->generateRecipe($video->title, $video->description ?? '', $video->url);
             Log::info("Gemini生成成功: VideoID {$video->id}", ['result' => $result]);
         } catch (Throwable $e) {
             Log::error("Gemini生成エラー: VideoID {$video->id}", ['error' => $e->getMessage()]);
@@ -84,17 +89,22 @@ class GenerateRecipeAction
             'cooking_time' => $result['cooking_time'] ?? null,
         ]);
 
-        foreach ($result['ingredients'] as $index => $ingredientData) {
-            $recipe->ingredients()->create([
-                'name' => $ingredientData['name'],
-                'quantity' => $ingredientData['quantity'],
-                'group' => $ingredientData['group'] ?? null,
-                'order' => $index,
-            ]);
-        }
+        $now = now(); // 一括挿入時はタイムスタンプが自動付与されないため
+
+        $ingredients = collect((array)$result['ingredients'])->map(function ($item, $index) use ($recipe, $now) {
+            return [
+                'recipe_id' => $recipe->id,
+                'name'      => $item['name'],
+                'quantity'  => $item['quantity'] ?? null,
+                'group'     => $item['group'] ?? null,
+                'order'     => $index,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        })->toArray();
+        $recipe->ingredients()->insert($ingredients);
 
         $stepNumberToIdMap = [];
-
         foreach ($result['steps'] as $stepData) {
             $step = $recipe->steps()->create([
                 'step_number' => $stepData['step_number'],
@@ -102,24 +112,26 @@ class GenerateRecipeAction
                 'start_time_in_seconds' => $stepData['start_time_in_seconds'] ?? null,
                 'end_time_in_seconds' => $stepData['end_time_in_seconds'] ?? null,
             ]);
-
             $stepNumberToIdMap[$stepData['step_number']] = $step->id;
         }
 
         if (!empty($result['tips'])) {
-            foreach ($result['tips'] as $tipData) {
-                // 関連するステップ番号があれば、DBのIDに変換する
+            $tips = collect((array)$result['tips'])->map(function ($item) use ($recipe, $stepNumberToIdMap, $now) {
                 $relatedStepId = null;
-                if (isset($tipData['related_step_number']) && isset($stepNumberToIdMap[$tipData['related_step_number']])) {
-                    $relatedStepId = $stepNumberToIdMap[$tipData['related_step_number']];
+                if (isset($item['related_step_number']) && isset($stepNumberToIdMap[$item['related_step_number']])) {
+                    $relatedStepId = $stepNumberToIdMap[$item['related_step_number']];
                 }
 
-                $recipe->tips()->create([
-                    'description' => $tipData['description'],
+                return [
+                    'recipe_id'      => $recipe->id,
                     'recipe_step_id' => $relatedStepId,
-                    'start_time_in_seconds' => $tipData['start_time_in_seconds'] ?? null,
-                ]);
-            }
+                    'description'    => $item['description'],
+                    'start_time_in_seconds' => $item['start_time_in_seconds'] ?? null,
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ];
+            })->toArray();
+            $recipe->tips()->insert($tips);
         }
 
         return $recipe;
