@@ -91,7 +91,7 @@ class GenerateRecipeAction
 
         $now = now(); // 一括挿入時はタイムスタンプが自動付与されないため
 
-        $ingredients = collect($result['ingredients'])->map(function ($item, $index) use ($recipe, $now) {
+        $ingredients = collect((array)$result['ingredients'])->map(function ($item, $index) use ($recipe, $now) {
             return [
                 'recipe_id' => $recipe->id,
                 'name'      => $item['name'],
@@ -116,7 +116,7 @@ class GenerateRecipeAction
         }
 
         if (!empty($result['tips'])) {
-            $tips = collect($result['tips'])->map(function ($item) use ($recipe, $stepNumberToIdMap, $now) {
+            $tips = collect((array)$result['tips'])->map(function ($item) use ($recipe, $stepNumberToIdMap, $now) {
                 $relatedStepId = null;
                 if (isset($item['related_step_number']) && isset($stepNumberToIdMap[$item['related_step_number']])) {
                     $relatedStepId = $stepNumberToIdMap[$item['related_step_number']];

@@ -52,10 +52,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereVideoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereViewCount($value)
+ * @method static \Database\Factories\VideoFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Video extends Model
 {
+    /** @use HasFactory<\Database\Factories\VideoFactory> */
     use HasFactory;
 
     protected $fillable = [

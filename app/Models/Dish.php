@@ -26,10 +26,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereParentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereUpdatedAt($value)
+ * @method static \Database\Factories\DishFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Dish extends Model
 {
+    /** @use HasFactory<\Database\Factories\DishFactory> */
     use HasFactory;
 
     protected $fillable = [
