@@ -77,7 +77,7 @@ class FetchYouTubeMetadataAction
      * @return string 抽出された動画ID
      * @throws VideoException 動画IDが抽出できない場合
      */
-    private function extractVideoId(string $url): string
+    public function extractVideoId(string $url): string
     {
         if (preg_match('/^[\w-]{11}$/', $url)) {
             return $url;
