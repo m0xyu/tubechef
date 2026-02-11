@@ -57,6 +57,8 @@ class GenerateRecipeJob implements ShouldQueue
 
             $generateRecipeAction->execute($this->video);
 
+            $this->video->markAsCompleted();
+
             Log::info("Job完了: VideoID {$this->video->video_id}");
         } catch (RecipeException $e) {
             Log::warning("生成失敗(リトライなし): {$e->getMessage()}");

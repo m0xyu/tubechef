@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Enums\Errors\RecipeError;
-use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\RecipeException;
 use App\Models\Dish;
 use App\Models\Recipe;
@@ -53,10 +52,7 @@ class GenerateRecipeAction
             return DB::transaction(function () use ($video, $result) {
                 $recipe = $this->saveRecipe($video, $result);
 
-                $video->update([
-                    'recipe_generation_status' => RecipeGenerationStatus::COMPLETED,
-                    'recipe_error_message' => null,
-                ]);
+                $video->markAsCompleted();
 
                 return $recipe;
             });

@@ -12,6 +12,7 @@ use App\Http\Resources\VideoPreviewResource;
 use App\Http\Resources\VideoResource;
 use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
@@ -25,11 +26,19 @@ class VideoController extends Controller
      */
     public function preview(VideoUrlRequest $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): VideoPreviewResource
     {
-        $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
-        $video = (new Video())->forceFill($metadata);
+        $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
+        $video = Video::where('video_id', $videoId)->first();
+
+        if (!$video) {
+            $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
+            $video = (new Video())->forceFill($metadata);
+        }
 
         return (new VideoPreviewResource($video))
-            ->additional(['success' => true]);
+            ->additional([
+                'success' => true,
+                'is_registered' => $video->exists
+            ]);
     }
 
     /**
@@ -48,6 +57,15 @@ class VideoController extends Controller
         YouTubeMetadataStoreAction $youTubeMetadataStore,
     ): VideoResource {
 
+        $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
+        $existingVideo = Video::where('video_id', $videoId)->first();
+
+        if ($existingVideo) {
+            if ($existingVideo->recipe_generation_status !== RecipeGenerationStatus::FAILED) {
+                return new VideoResource($existingVideo->load('channel'));
+            }
+        }
+
         $metadata = $fetchYouTubeMetadata->execute(
             $request->getVideoUrl(),
             FetchYouTubeMetadataAction::PARTS_FULL
@@ -55,14 +73,17 @@ class VideoController extends Controller
 
         $channelInfo = $fetchChannelInfo->execute($metadata['channel_id']);
         $metadata = array_merge($metadata, $channelInfo);
-        $video = $youTubeMetadataStore->execute($metadata);
 
-        $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
-        GenerateRecipeJob::dispatch($video);
+        $video = DB::transaction(function () use ($youTubeMetadataStore, $metadata) {
+            $video = $youTubeMetadataStore->execute($metadata);
 
-        $video->load('channel');
-        return (new VideoResource($video))
-            ->additional(['success' => true]);
+            $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
+            GenerateRecipeJob::dispatch($video);
+
+            return $video;
+        });
+
+        return (new VideoResource($video->load('channel')))->additional(['success' => true]);
     }
 
     /**

@@ -116,4 +116,16 @@ class Video extends Model
             get: fn() => 'https://www.youtube.com/watch?v=' . $this->video_id,
         );
     }
+
+    /**
+     * 動画のレシピ生成を完了状態に更新する
+     * @return void
+     */
+    public function markAsCompleted(): void
+    {
+        $this->update([
+            'recipe_generation_status' => RecipeGenerationStatus::COMPLETED,
+            'recipe_generation_error_message' => null,
+        ]);
+    }
 }
