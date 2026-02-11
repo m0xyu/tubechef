@@ -17,6 +17,9 @@ enum VideoError: string
     #[ErrorDetails('動画IDが無効です。', 422)]
     case INVALID_ID = 'invalid_id';
 
+    #[ErrorDetails('この動画は生成できません、他の動画を試してください。', 422)]
+    case MAX_RETRY_EXCEEDED = 'max_retry_exceeded';
+
     // 共通系
     #[ErrorDetails('予期せぬエラーが発生しました。', 500)]
     case INTERNAL_ERROR = 'internal_error';

@@ -62,11 +62,7 @@ class GenerateRecipeJob implements ShouldQueue
             Log::info("Job完了: VideoID {$this->video->video_id}");
         } catch (RecipeException $e) {
             Log::warning("生成失敗(リトライなし): {$e->getMessage()}");
-
-            $this->video->update([
-                'recipe_generation_status' => RecipeGenerationStatus::FAILED,
-                'recipe_generation_error_message' => $e->getMessage(),
-            ]);
+            $this->fail($e);
         } catch (Throwable $e) {
             Log::error("システムエラー(リトライ対象): {$e->getMessage()}");
             throw $e; // Laravelがこれを検知してリトライ処理に回す
@@ -84,5 +80,6 @@ class GenerateRecipeJob implements ShouldQueue
             'recipe_generation_status' => RecipeGenerationStatus::FAILED,
             'recipe_generation_error_message' => $exception->getMessage(),
         ]);
+        $this->video->increment('generation_retry_count');
     }
 }
