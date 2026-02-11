@@ -17,6 +17,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string $channel_id
  * @property \App\Models\Channel|null $channel
  * @property \App\Enums\RecipeGenerationStatus|null $recipe_generation_status
+ * @property string|null $recipe_generation_error_message
+ * @property int $generation_retry_count
+ * @property-read \App\Models\Recipe|null $recipe
  */
 class VideoPreviewResource extends JsonResource
 {
@@ -42,7 +45,12 @@ class VideoPreviewResource extends JsonResource
                 'id' => $channelId,
             ],
             'is_registered' => $this->exists,
+            'is_retryable' => $this->generation_retry_count < config('services.gemini.retry_count', 2),
             'recipe_generation_status' => $this->recipe_generation_status ?? null,
+            'recipe_generation_error_message' => $this->recipe_generation_error_message,
+            'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
+                ? $this->recipe->slug
+                : null,
         ];
     }
 }

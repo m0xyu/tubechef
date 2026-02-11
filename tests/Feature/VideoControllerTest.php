@@ -85,6 +85,49 @@ describe('Video Controller: preview', function () {
                 'error_code' => 'fetch_failed',
             ]);
     });
+
+    test('すでに登録動画がある場合その動画が返される', function () {
+        $channel = \App\Models\Channel::factory()->create([
+            'channel_id' => 'UC12345',
+            'name' => 'Chef Ryuji',
+        ]);
+
+        $video = \App\Models\Video::factory()->create([
+            'video_id' => 'dQw4w9WgXcQ',
+            'title' => 'Delicious Curry',
+            'channel_id' => $channel->id,
+        ]);
+
+        $response = postJson('/api/videos/preview', [
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'video_id' => $video->video_id,
+                    'title' => 'Delicious Curry',
+                ]
+            ]);
+    });
+
+    test('異常：渡されたのがurlではない場合', function () {
+        $response = postJson('/api/videos/preview', [
+            'video_url' => 'invalid_video_id'
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                "message" => "The video url field must be a valid URL. (and 1 more error)",
+                "errors" => [
+                    "video_url" => [
+                        "The video url field must be a valid URL.",
+                        "The video url field format is invalid."
+                    ]
+                ]
+            ]);
+    });
 });
 
 describe('Video Controller: store', function () {
@@ -190,5 +233,61 @@ describe('Video Controller: store', function () {
             'duration' => 930,
             'recipe_generation_status' => RecipeGenerationStatus::PROCESSING->value,
         ]);
+    });
+
+    test('すでに登録動画がある場合その動画が返される', function () {
+        Queue::fake();
+
+        $channel = \App\Models\Channel::factory()->create([
+            'channel_id' => 'UC12345',
+            'name' => 'Chef Ryuji',
+        ]);
+
+        $video = \App\Models\Video::factory()->create([
+            'video_id' => 'dQw4w9WgXcQ',
+            'title' => 'Delicious Curry',
+            'channel_id' => $channel->id,
+            'recipe_generation_status' => RecipeGenerationStatus::COMPLETED,
+        ]);
+
+        $response = postJson('/api/videos', [
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $video->id,
+                    'video_id' => 'dQw4w9WgXcQ',
+                    'title' => 'Delicious Curry',
+                    'recipe_generation_status' => RecipeGenerationStatus::COMPLETED->value,
+                ]
+            ]);
+    });
+
+    test('異常：generation_retry_countが規定回数を超えていたらVideoExceptionが投げられる', function () {
+        $channel = \App\Models\Channel::factory()->create([
+            'channel_id' => 'UC12345',
+            'name' => 'Chef Ryuji',
+        ]);
+
+        $video = \App\Models\Video::factory()->create([
+            'video_id' => 'dQw4w9WgXcQ',
+            'title' => 'Delicious Curry',
+            'channel_id' => $channel->id,
+            'recipe_generation_status' => RecipeGenerationStatus::FAILED,
+            'generation_retry_count' => config('services.gemini.retry_count', 2),
+        ]);
+
+        $response = postJson('/api/videos', [
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'error_code' => 'max_retry_exceeded',
+                'message' => 'この動画は生成できません、他の動画を試してください。'
+            ]);
     });
 });

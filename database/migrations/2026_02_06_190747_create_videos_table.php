@@ -28,6 +28,7 @@ return new class extends Migration
             $table->unsignedInteger('duration')->nullable()->comment('動画の長さ（秒）');
             $table->string('recipe_generation_status')->default('pending');
             $table->text('recipe_generation_error_message')->nullable();
+            $table->integer('generation_retry_count')->default(0);
             $table->timestamps();
 
             $table->index('view_count');

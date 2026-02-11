@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\FetchChannelInfoAction;
 use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
+use App\Enums\Errors\VideoError;
 use App\Enums\RecipeGenerationStatus;
+use App\Exceptions\VideoException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VideoUrlRequest;
 use App\Http\Resources\VideoPreviewResource;
@@ -27,7 +29,10 @@ class VideoController extends Controller
     public function preview(VideoUrlRequest $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): VideoPreviewResource
     {
         $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
-        $video = Video::where('video_id', $videoId)->first();
+
+        $video = Video::where('video_id', $videoId)
+            ->with(['recipe'])
+            ->first();
 
         if (!$video) {
             $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
@@ -37,7 +42,6 @@ class VideoController extends Controller
         return (new VideoPreviewResource($video))
             ->additional([
                 'success' => true,
-                'is_registered' => $video->exists
             ]);
     }
 
@@ -49,6 +53,7 @@ class VideoController extends Controller
      * @param YouTubeMetadataStoreAction $youTubeMetadataStore
      * @param FetchChannelInfoAction $fetchChannelInfo
      * @return VideoResource
+     * @throws VideoException
      */
     public function store(
         VideoUrlRequest $request,
@@ -61,8 +66,12 @@ class VideoController extends Controller
         $existingVideo = Video::where('video_id', $videoId)->first();
 
         if ($existingVideo) {
+            if ($existingVideo->generation_retry_count >= config('services.gemini.retry_count', 2) && $existingVideo->recipe_generation_status === RecipeGenerationStatus::FAILED) {
+                throw new VideoException(VideoError::MAX_RETRY_EXCEEDED);
+            }
+
             if ($existingVideo->recipe_generation_status !== RecipeGenerationStatus::FAILED) {
-                return new VideoResource($existingVideo->load('channel'));
+                return new VideoResource($existingVideo->load('channel', 'recipe'));
             }
         }
 

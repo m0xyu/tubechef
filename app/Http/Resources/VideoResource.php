@@ -21,6 +21,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property int|null $like_count
  * @property int|null $comment_count
  * @property array<string>|null $topic_categories
+ * @property-read \App\Models\Channel $channel
+ * @property-read \App\Models\Recipe|null $recipe
  */
 class VideoResource extends JsonResource
 {
@@ -47,6 +49,9 @@ class VideoResource extends JsonResource
             'like_count' => $this->like_count,
             'comment_count' => $this->comment_count,
             'topic_categories' => $this->topic_categories,
+            'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
+                ? $this->recipe->slug
+                : null,
         ];
     }
 }

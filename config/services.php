@@ -41,5 +41,6 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
+        'retry_count' => env('GEMINI_RETRY_COUNT', 2),
     ],
 ];
