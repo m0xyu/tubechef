@@ -15,6 +15,7 @@ use App\Http\Resources\VideoResource;
 use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
@@ -52,7 +53,7 @@ class VideoController extends Controller
      * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
      * @param YouTubeMetadataStoreAction $youTubeMetadataStore
      * @param FetchChannelInfoAction $fetchChannelInfo
-     * @return VideoResource
+     * @return VideoPreviewResource
      * @throws VideoException
      */
     public function store(
@@ -60,18 +61,19 @@ class VideoController extends Controller
         FetchYouTubeMetadataAction $fetchYouTubeMetadata,
         FetchChannelInfoAction $fetchChannelInfo,
         YouTubeMetadataStoreAction $youTubeMetadataStore,
-    ): VideoResource {
-
+    ): VideoPreviewResource {
         $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
         $existingVideo = Video::where('video_id', $videoId)->first();
 
         if ($existingVideo) {
-            if ($existingVideo->generation_retry_count >= config('services.gemini.retry_count', 2) && $existingVideo->recipe_generation_status === RecipeGenerationStatus::FAILED) {
+            // 1. もうリトライの上限を超えてしまっている場合 → エラー
+            if ($existingVideo->hasExceededRetryLimit()) {
                 throw new VideoException(VideoError::MAX_RETRY_EXCEEDED);
             }
 
-            if ($existingVideo->recipe_generation_status !== RecipeGenerationStatus::FAILED) {
-                return new VideoResource($existingVideo->load('channel', 'recipe'));
+            // 2. すでに成功しているか、処理中の場合 → そのまま返す
+            if ($existingVideo->isGenerationProcessingOrCompleted()) {
+                return new VideoPreviewResource($existingVideo->load('channel', 'recipe'));
             }
         }
 
@@ -92,13 +94,13 @@ class VideoController extends Controller
             return $video;
         });
 
-        return (new VideoResource($video->load('channel')))->additional(['success' => true]);
+        return (new VideoPreviewResource($video->load('channel', 'recipe')))->additional(['success' => true]);
     }
 
     /**
      * 動画のレシピ生成ステータスを確認する（ポーリング用）
      *
-     * @param string $videoId (YouTubeのID または DBのID)
+     * @param string $videoId (YouTubeのID)
      * @return JsonResponse
      */
     public function checkStatus(string $videoId): JsonResponse
@@ -107,9 +109,30 @@ class VideoController extends Controller
             ->select(['id', 'video_id', 'recipe_generation_status', 'recipe_generation_error_message'])
             ->firstOrFail();
 
+        if ($video->recipe_generation_status === RecipeGenerationStatus::COMPLETED) {
+            // N+1対策でロード
+            $video->load('recipe');
+
+            return response()->json([
+                'status' => 'completed',
+                'action_type' => 'view_recipe',
+                'recipe_slug' => $video->recipe ? $video->recipe->slug : null,
+            ]);
+        }
+
+        // 失敗時
+        if ($video->recipe_generation_status === RecipeGenerationStatus::FAILED) {
+            return response()->json([
+                'status' => 'failed',
+                'action_type' => 'generate',
+                'error_message' => $video->recipe_generation_error_message,
+            ]);
+        }
+
+        // 処理中 (processing)
         return response()->json([
-            'status' => $video->recipe_generation_status,
-            'error_message' => $video->recipe_generation_error_message,
+            'status' => 'processing',
+            'action_type' => 'processing',
         ]);
     }
 }

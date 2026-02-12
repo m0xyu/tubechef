@@ -128,4 +128,25 @@ class Video extends Model
             'recipe_generation_error_message' => null,
         ]);
     }
+
+    /**
+     * リトライ回数の上限に達しているか判定
+     * @return bool
+     */
+    public function hasExceededRetryLimit(): bool
+    {
+        // 失敗ステータス以外なら、そもそもリトライ上限という概念は適用外（あるいはfalse）
+        // ここでは「失敗していて、かつ回数オーバー」を判定
+        return $this->recipe_generation_status === RecipeGenerationStatus::FAILED
+            && $this->generation_retry_count >= config('services.gemini.retry_count', 2);
+    }
+
+    /**
+     * すでに生成済み、または生成処理中か判定
+     * @return bool
+     */
+    public function isGenerationProcessingOrCompleted(): bool
+    {
+        return $this->recipe_generation_status !== RecipeGenerationStatus::FAILED;
+    }
 }

@@ -23,7 +23,7 @@ class GenerateRecipeJob implements ShouldQueue
     /** @var int*/
     public $maxExceptions = 3;
     /** @var int */
-    public $timeout = 120;
+    public $timeout = 160;
     /** @var int */
     public int $backoff = 10;
 
