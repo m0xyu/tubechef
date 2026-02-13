@@ -119,11 +119,11 @@ describe('Video Controller: preview', function () {
 
         $response->assertStatus(422)
             ->assertJson([
-                "message" => 'validation.url (and 1 more error)',
+                "message" => 'video urlは、有効なURL形式で指定してください。 (その他、1エラーあり)',
                 "errors" => [
                     "video_url" => [
-                        "validation.url",
-                        "validation.regex"
+                        "video urlは、有効なURL形式で指定してください。",
+                        "video urlには、正しい形式を指定してください。"
                     ]
                 ]
             ]);
