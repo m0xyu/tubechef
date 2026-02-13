@@ -11,11 +11,9 @@ use App\Exceptions\VideoException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VideoUrlRequest;
 use App\Http\Resources\VideoPreviewResource;
-use App\Http\Resources\VideoResource;
 use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
