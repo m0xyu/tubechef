@@ -109,7 +109,7 @@ class GeminiService implements LLMServiceInterface
                     'items' => [
                         'type' => 'OBJECT',
                         'properties' => [
-                            'description' => ['type' => 'STRING', 'description' => 'コツやポイント'],
+                            'description' => ['type' => 'STRING', 'description' => '特に大事なコツやポイントを最大5つまで'],
                             'related_step_number' => ['type' => 'INTEGER', 'nullable' => true],
                             'start_time_in_seconds' => [
                                 'type' => 'INTEGER',
@@ -140,27 +140,28 @@ class GeminiService implements LLMServiceInterface
         EOT;
 
         /** @var \Illuminate\Http\Client\Response $response */
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post("{$this->baseUrl}?key={$this->apiKey}", [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $systemInstruction . "\n\n" . $userPrompt],
-                        [
-                            'file_data' => [
-                                'file_uri' => $videoUrl
+        $response = Http::timeout(120)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("{$this->baseUrl}?key={$this->apiKey}", [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $systemInstruction . "\n\n" . $userPrompt],
+                            [
+                                'file_data' => [
+                                    'file_uri' => $videoUrl
+                                ]
                             ]
                         ]
                     ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.1,
+                    'responseMimeType' => 'application/json',
+                    'responseSchema' => $recipeSchema,
                 ]
-            ],
-            'generationConfig' => [
-                'temperature' => 0.1,
-                'responseMimeType' => 'application/json',
-                'responseSchema' => $recipeSchema,
-            ]
-        ]);
+            ]);
 
         if ($response->failed()) {
             $status = $response->status();

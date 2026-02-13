@@ -20,6 +20,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string|null $recipe_generation_error_message
  * @property int $generation_retry_count
  * @property-read \App\Models\Recipe|null $recipe
+ * @property bool $is_registered
+ * @property bool $is_retryable
+ * 
  */
 class VideoPreviewResource extends JsonResource
 {
@@ -33,6 +36,7 @@ class VideoPreviewResource extends JsonResource
         $channelName = $this->channel ? $this->channel->name : ($this->channel_name ?? '');
         $channelId = $this->channel ? $this->channel->channel_id : ($this->channel_id ?? '');
 
+
         return [
             'video_id' => $this->video_id,
             'title' => $this->title,
@@ -44,13 +48,38 @@ class VideoPreviewResource extends JsonResource
                 'name' => $channelName,
                 'id' => $channelId,
             ],
-            'is_registered' => $this->exists,
-            'is_retryable' => $this->generation_retry_count < config('services.gemini.retry_count', 2),
+            'action_type' => $this->determineActionType(),
+            'stats' => [
+                'is_registered' => $this->exists,
+                'is_retryable' => $this->is_retryable,
+                'retry_count' => $this->generation_retry_count ?? 0,
+            ],
             'recipe_generation_status' => $this->recipe_generation_status ?? null,
             'recipe_generation_error_message' => $this->recipe_generation_error_message,
             'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
                 ? $this->recipe->slug
                 : null,
         ];
+    }
+
+    /**
+     * フロントエンドが表示すべきボタンの種類を判定する
+     * @return string view_recipe,generate,limit_exceededのいずれか
+     */
+    private function determineActionType(): string
+    {
+        // レシピが既に存在する -> 「レシピを見る」
+        if ($this->resource->relationLoaded('recipe') && $this->recipe) {
+            return 'view_recipe';
+        }
+
+        // DBに存在し、かつリトライ上限を超えている -> 「制限到達（生成不可）」
+        // ※ hasExceededRetryLimit は「失敗かつ回数オーバー」の時に true を返す
+        if ($this->exists && $this->hasExceededRetryLimit()) {
+            return 'limit_exceeded';
+        }
+
+        // 上記以外（新規、またはリトライ回数が残っている） -> 「生成する」
+        return 'generate';
     }
 }
