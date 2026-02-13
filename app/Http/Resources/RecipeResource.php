@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string|null $summary
  * @property string|null $cooking_time
  * @property string|null $serving_size
+ * @property-read \App\Models\Video|null $video
  */
 class RecipeResource extends JsonResource
 {
