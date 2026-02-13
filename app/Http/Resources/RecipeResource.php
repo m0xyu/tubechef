@@ -32,6 +32,9 @@ class RecipeResource extends JsonResource
             'tips' => RecipeTipResource::collection($this->whenLoaded('tips')),
             'dish' => new DishResource($this->whenLoaded('dish')),
             'video' => new VideoResource($this->whenLoaded('video')),
+            'channel' => $this->video?->channel
+                ? new ChannelResource($this->video->channel)
+                : null,
         ];
     }
 }
