@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string|null $summary
  * @property string|null $cooking_time
  * @property string|null $serving_size
+ * @property-read \App\Models\Video|null $video
  */
 class RecipeResource extends JsonResource
 {
@@ -32,6 +33,9 @@ class RecipeResource extends JsonResource
             'tips' => RecipeTipResource::collection($this->whenLoaded('tips')),
             'dish' => new DishResource($this->whenLoaded('dish')),
             'video' => new VideoResource($this->whenLoaded('video')),
+            'channel' => $this->video?->channel
+                ? new ChannelResource($this->video->channel)
+                : null,
         ];
     }
 }
