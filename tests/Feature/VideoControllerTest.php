@@ -119,11 +119,11 @@ describe('Video Controller: preview', function () {
 
         $response->assertStatus(422)
             ->assertJson([
-                "message" => "The video url field must be a valid URL. (and 1 more error)",
+                "message" => 'video urlは、有効なURL形式で指定してください。 (その他、1エラーあり)',
                 "errors" => [
                     "video_url" => [
-                        "The video url field must be a valid URL.",
-                        "The video url field format is invalid."
+                        "video urlは、有効なURL形式で指定してください。",
+                        "video urlには、正しい形式を指定してください。"
                     ]
                 ]
             ]);
@@ -198,24 +198,15 @@ describe('Video Controller: store', function () {
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'id',
                     'video_id',
                     'title',
                     'description',
                     'thumbnail_url',
                     'published_at',
                     'duration',
-                    'view_count',
-                    'like_count',
-                    'comment_count',
-                    'topic_categories',
-                    'recipe_generation_status',
-                    'recipe_generation_status_message',
-                    'channel' =>  [
-                        'channel_id',
+                    'channel' => [
+                        'id',
                         'name',
-                        'custom_url',
-                        'thumbnail_url',
                     ]
                 ]
             ]);
@@ -257,7 +248,6 @@ describe('Video Controller: store', function () {
         $response->assertStatus(200)
             ->assertJson([
                 'data' => [
-                    'id' => $video->id,
                     'video_id' => 'dQw4w9WgXcQ',
                     'title' => 'Delicious Curry',
                     'recipe_generation_status' => RecipeGenerationStatus::COMPLETED->value,
