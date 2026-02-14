@@ -1,12 +1,12 @@
 <?php
 
 use App\Enums\RecipeGenerationStatus;
-use App\Jobs\GenerateRecipeJob;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Http;
 
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\actingAs;
 
 describe('Video Controller: preview', function () {
     test('valid url returns video metadata successfully', function () {
@@ -183,9 +183,12 @@ describe('Video Controller: store', function () {
             ], 200),
         ]);
 
-        $response = postJson('/api/videos', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(201)
             ->assertJson([
