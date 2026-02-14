@@ -83,10 +83,12 @@ class VideoController extends Controller
         $channelInfo = $fetchChannelInfo->execute($metadata['channel_id']);
         $metadata = array_merge($metadata, $channelInfo);
 
-        $video = DB::transaction(function () use ($youTubeMetadataStore, $metadata) {
+        $video = DB::transaction(function () use ($youTubeMetadataStore, $metadata, $request) {
             $video = $youTubeMetadataStore->execute($metadata);
 
             $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
+            $request->user()->historyVideos()->syncWithoutDetaching([$video->id]);
+
             GenerateRecipeJob::dispatch($video);
 
             return $video;

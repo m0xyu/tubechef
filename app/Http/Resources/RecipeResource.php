@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property int $id
  * @property string $title
+ * @property string $slug
  * @property string|null $summary
  * @property string|null $cooking_time
  * @property string|null $serving_size
@@ -25,6 +26,7 @@ class RecipeResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'summary' => $this->summary,
             'cooking_time' => $this->cooking_time,
             'serving_size' => $this->serving_size,

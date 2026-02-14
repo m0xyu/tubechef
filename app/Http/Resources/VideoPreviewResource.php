@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\RecipeGenerationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,6 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @mixin \App\Models\Video
  * @property string $video_id
  * @property string $title
+ * @property string $video_url
  * @property string $description
  * @property string $thumbnail_url
  * @property int|null $duration
@@ -39,6 +41,7 @@ class VideoPreviewResource extends JsonResource
 
         return [
             'video_id' => $this->video_id,
+            'video_url' => $this->url,
             'title' => $this->title,
             'description' => $this->description,
             'thumbnail_url' => $this->thumbnail_url,
@@ -71,6 +74,12 @@ class VideoPreviewResource extends JsonResource
         // レシピが既に存在する -> 「レシピを見る」
         if ($this->resource->relationLoaded('recipe') && $this->recipe) {
             return 'view_recipe';
+        }
+
+        // 2. 生成中 -> 「処理中（スピナー表示）」 ★これを追加推奨
+        $status = $this->recipe_generation_status;
+        if ($status === RecipeGenerationStatus::PROCESSING || $status === RecipeGenerationStatus::PENDING) {
+            return 'processing';
         }
 
         // DBに存在し、かつリトライ上限を超えている -> 「制限到達（生成不可）」
