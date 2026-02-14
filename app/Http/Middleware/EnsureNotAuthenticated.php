@@ -16,13 +16,13 @@ class EnsureNotAuthenticated
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // if (Auth::check()) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'すでにログイン中です。',
-        //         'error_code' => 'ALREADY_AUTHENTICATED'
-        //     ], 403);
-        // }
+        if (Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'すでにログイン中です。',
+                'error_code' => 'ALREADY_AUTHENTICATED'
+            ], 403);
+        }
 
         return $next($request);
     }
