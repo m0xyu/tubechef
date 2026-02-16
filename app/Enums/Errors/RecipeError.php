@@ -13,9 +13,6 @@ enum RecipeError: string
         // DB保存に失敗した
     case SAVE_FAILED = 'save_failed';
 
-        // 既にレシピが存在する（再生成しようとした場合など）
-    case ALREADY_EXISTS = 'already_exists';
-
     /**
      * エラーメッセージを取得（ログやデバッグ用）
      */
@@ -25,7 +22,6 @@ enum RecipeError: string
             self::NOT_A_RECIPE => 'この動画はレシピとして認識されませんでした。',
             self::GENERATION_FAILED => 'AIによるレシピ生成に失敗しました。',
             self::SAVE_FAILED => 'レシピの保存に失敗しました。',
-            self::ALREADY_EXISTS => 'この動画のレシピは既に存在します。',
         };
     }
 }
