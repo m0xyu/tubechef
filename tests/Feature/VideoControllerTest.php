@@ -33,9 +33,12 @@ describe('Video Controller: preview', function () {
             ], 200),
         ]);
 
-        $response = postJson('/api/videos/preview', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos/preview', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -63,8 +66,10 @@ describe('Video Controller: preview', function () {
     });
 
     test('validation fails when video_url is missing', function () {
-        // 空のデータを送る
-        $response = postJson('/api/videos/preview', []);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos/preview', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['video_url']);
@@ -75,9 +80,11 @@ describe('Video Controller: preview', function () {
             'www.googleapis.com/*' => Http::response([], 500),
         ]);
 
-        $response = postJson('/api/videos/preview', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+        $response = actingAs($user)
+            ->postJson('/api/videos/preview', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(400)
             ->assertJson([
@@ -98,9 +105,12 @@ describe('Video Controller: preview', function () {
             'channel_id' => $channel->id,
         ]);
 
-        $response = postJson('/api/videos/preview', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos/preview', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -113,9 +123,12 @@ describe('Video Controller: preview', function () {
     });
 
     test('異常：渡されたのがurlではない場合', function () {
-        $response = postJson('/api/videos/preview', [
-            'video_url' => 'invalid_video_id'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos/preview', [
+                'video_url' => 'invalid_video_id'
+            ]);
 
         $response->assertStatus(422)
             ->assertJson([
@@ -126,6 +139,17 @@ describe('Video Controller: preview', function () {
                         "video urlには、正しい形式を指定してください。"
                     ]
                 ]
+            ]);
+    });
+
+    test('異常：ログインしていなければエラー', function () {
+        $response = postJson('/api/videos/preview', [
+            'video_url'
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.',
             ]);
     });
 });
@@ -244,9 +268,12 @@ describe('Video Controller: store', function () {
             'recipe_generation_status' => RecipeGenerationStatus::COMPLETED,
         ]);
 
-        $response = postJson('/api/videos', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -272,15 +299,29 @@ describe('Video Controller: store', function () {
             'generation_retry_count' => config('services.gemini.retry_count', 2),
         ]);
 
-        $response = postJson('/api/videos', [
-            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]);
+        $user = \App\Models\User::factory()->create();
+
+        $response = actingAs($user)
+            ->postJson('/api/videos', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
 
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
                 'error_code' => 'max_retry_exceeded',
                 'message' => 'この動画は生成できません、他の動画を試してください。'
+            ]);
+    });
+
+    test('異常：ログインしていなければエラー', function () {
+        $response = postJson('/api/videos/preview', [
+            'video_url'
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.',
             ]);
     });
 });

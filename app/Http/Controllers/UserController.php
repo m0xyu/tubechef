@@ -5,11 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VideoPreviewResource;
 use App\Models\Video;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -20,7 +19,6 @@ class UserController extends Controller
     {
         /** @var \App\Models\User */
         $user = Auth::user();
-        Log::info($user);
         $videos = $user->historyVideos()->with('channel', 'recipe')->get();
         return VideoPreviewResource::collection($videos);
     }
@@ -34,8 +32,9 @@ class UserController extends Controller
     {
         /** @var \App\Models\User */
         $user = Auth::user();
-
         $video = Video::where('video_id', $videoId)->firstOrFail();
+
+        Gate::authorize('detachHistory', $video);
         $user->historyVideos()->detach($video->id);
 
         return response()->json([
