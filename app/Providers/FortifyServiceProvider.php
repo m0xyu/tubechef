@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -17,6 +18,8 @@ use Laravel\Fortify\Contracts\LogoutResponse;
 use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Fortify;
 use Illuminate\Http\JsonResponse;
+use Laravel\Fortify\Contracts\PasswordResetResponse;
+use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -70,6 +73,24 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 return new JsonResponse(['success' => true, 'message' => 'Registered'], 201);
             }
+        });
+
+        $this->app->instance(SuccessfulPasswordResetLinkRequestResponse::class, new class implements SuccessfulPasswordResetLinkRequestResponse {
+            public function toResponse($request)
+            {
+                return new JsonResponse(['success' => true, 'message' => 'Password reset link sent'], 200);
+            }
+        });
+
+        $this->app->instance(PasswordResetResponse::class, new class implements PasswordResetResponse {
+            public function toResponse($request)
+            {
+                return new JsonResponse(['success' => true, 'message' => 'Password has been reset'], 200);
+            }
+        });
+
+        ResetPassword::createUrlUsing(function ($user, string $token) {
+            return "http://localhost:5173/reset-password?token={$token}&email={$user->email}";
         });
     }
 }
