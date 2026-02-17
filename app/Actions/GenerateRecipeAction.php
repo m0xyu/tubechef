@@ -12,6 +12,7 @@ use App\Models\Recipe;
 use App\Models\Video;
 use App\Services\LLM\LLMServiceFactory;
 use App\Services\LLM\LLMServiceInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -57,6 +58,7 @@ class GenerateRecipeAction
 
                 $video->markAsCompleted();
 
+                Cache::tags(['recipes'])->flush();
                 return $recipe;
             });
         } catch (Throwable $e) {
