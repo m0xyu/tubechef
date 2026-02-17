@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\FetchChannelInfoAction;
 use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
+use App\Dtos\YouTubeFullMetadataData;
 use App\Enums\Errors\VideoError;
 use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\VideoException;
@@ -13,6 +14,7 @@ use App\Http\Requests\VideoUrlRequest;
 use App\Http\Resources\VideoPreviewResource;
 use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
+use App\ValueObjects\YouTubeVideoId;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -27,15 +29,26 @@ class VideoController extends Controller
      */
     public function preview(VideoUrlRequest $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): VideoPreviewResource
     {
-        $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
+        $videoId = YouTubeVideoId::fromUrl($request->getVideoUrl());
 
-        $video = Video::where('video_id', $videoId)
+        $video = Video::where('video_id', (string)$videoId)
             ->with(['recipe'])
             ->first();
 
         if (!$video) {
-            $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
-            $video = (new Video())->forceFill($metadata);
+            $metadata = $fetchYouTubeMetadata->execute($videoId, FetchYouTubeMetadataAction::PARTS_PREVIEW);
+            $video = (new Video())->forceFill([
+                'video_id'         => $metadata->videoId,
+                'title'            => $metadata->title,
+                'channel_name'     => $metadata->channelName,
+                'channel_id'       => $metadata->channelId,
+                'category_id'      => $metadata->categoryId,
+                'description'      => $metadata->description,
+                'thumbnail_url'    => $metadata->thumbnailUrl,
+                'published_at'     => $metadata->publishedAt,
+                'duration'         => $metadata->durationSeconds,
+                'topic_categories' => $metadata->topicCategories,
+            ]);
         }
 
         return (new VideoPreviewResource($video))
@@ -60,8 +73,8 @@ class VideoController extends Controller
         FetchChannelInfoAction $fetchChannelInfo,
         YouTubeMetadataStoreAction $youTubeMetadataStore,
     ): VideoPreviewResource {
-        $videoId = $fetchYouTubeMetadata->extractVideoId($request->getVideoUrl());
-        $existingVideo = Video::where('video_id', $videoId)->first();
+        $videoId = YouTubeVideoId::fromUrl($request->getVideoUrl());
+        $existingVideo = Video::where('video_id', (string)$videoId)->first();
 
         if ($existingVideo) {
             // 1. もうリトライの上限を超えてしまっている場合 → エラー
@@ -75,16 +88,19 @@ class VideoController extends Controller
             }
         }
 
-        $metadata = $fetchYouTubeMetadata->execute(
-            $request->getVideoUrl(),
+        $videoData = $fetchYouTubeMetadata->execute(
+            $videoId,
             FetchYouTubeMetadataAction::PARTS_FULL
         );
 
-        $channelInfo = $fetchChannelInfo->execute($metadata['channel_id']);
-        $metadata = array_merge($metadata, $channelInfo);
+        $channelData = $fetchChannelInfo->execute($videoData->channelId);
+        $youtubeMetadata = new YouTubeFullMetadataData(
+            $videoData,
+            $channelData
+        );
 
-        $video = DB::transaction(function () use ($youTubeMetadataStore, $metadata, $request) {
-            $video = $youTubeMetadataStore->execute($metadata);
+        $video = DB::transaction(function () use ($youTubeMetadataStore, $youtubeMetadata, $request) {
+            $video = $youTubeMetadataStore->execute($youtubeMetadata);
 
             $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
             $request->user()->historyVideos()->syncWithoutDetaching([$video->id]);
@@ -105,7 +121,9 @@ class VideoController extends Controller
      */
     public function checkStatus(string $videoId): JsonResponse
     {
-        $video = Video::where('video_id', $videoId)
+        $videoId = YouTubeVideoId::fromString($videoId);
+
+        $video = Video::where('video_id', (string)$videoId)
             ->select(['id', 'video_id', 'recipe_generation_status', 'recipe_generation_error_message'])
             ->firstOrFail();
 

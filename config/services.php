@@ -39,6 +39,10 @@ return [
         'api_key' => env('GOOGLE_API_KEY'),
     ],
 
+    'youtube' => [
+        'base_url' => env('YOUTUBE_API_BASE_URL', 'https://www.googleapis.com/youtube/v3')
+    ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'retry_count' => env('GEMINI_RETRY_COUNT', 2),

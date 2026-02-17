@@ -46,9 +46,9 @@ describe('GeminiService', function () {
         $service = new GeminiService();
         $result = $service->generateRecipe('Curry Video', 'How to make curry', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
-        expect($result['title'])->toBe('Delicious Curry');
-        expect($result['ingredients'][0]['name'])->toBe('Chicken');
-        expect($result['is_recipe'])->toBeTrue();
+        expect($result->title)->toBe('Delicious Curry');
+        expect($result->ingredients[0]->name)->toBe('Chicken');
+        expect($result->isRecipe)->toBeTrue();
     });
 
     test('throws exception on api failure', function () {

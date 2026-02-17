@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Dtos\YouTubeChannelData;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -11,13 +12,14 @@ class FetchChannelInfoAction
      * YouTubeチャンネル情報を取得する
      * 
      * @param string $channelId
-     * @return array<string, mixed>
+     * @return YouTubeChannelData
      */
-    public function execute(string $channelId): array
+    public function execute(string $channelId): YouTubeChannelData
     {
+        $baseUrl = config('services.youtube.base_url');
         $apiKey = config('services.google.api_key');
 
-        $response = Http::get('https://www.googleapis.com/youtube/v3/channels', [
+        $response = Http::get("{$baseUrl}/channels", [
             'part' => 'snippet,statistics',
             'id' => $channelId,
             'key' => $apiKey,
@@ -29,14 +31,14 @@ class FetchChannelInfoAction
                 'body' => $response->json(),
             ]);
 
-            return [];
+            return YouTubeChannelData::empty();
         }
 
         $item = $response->json('items.0');
         $snippet = $item['snippet'] ?? [];
         $statistics = $item['statistics'] ?? [];
 
-        return [
+        $resultArray = [
             'channel_description' => $snippet['description'] ?? null,
             'channel_custom_url' => $snippet['customUrl'] ?? null,
             'channel_thumbnail_url' => $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['default']['url'] ?? null,
@@ -44,5 +46,7 @@ class FetchChannelInfoAction
             'channel_view_count' => $statistics['viewCount'] ?? null,
             'channel_video_count' => $statistics['videoCount'] ?? null,
         ];
+
+        return YouTubeChannelData::fromArray($resultArray);
     }
 }

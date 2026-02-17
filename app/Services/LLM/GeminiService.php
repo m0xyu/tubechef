@@ -2,6 +2,7 @@
 
 namespace App\Services\LLM;
 
+use App\Dtos\GeneratedRecipeData;
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Services\LLM\LLMServiceInterface;
@@ -29,10 +30,10 @@ class GeminiService implements LLMServiceInterface
      * @param string $title 動画タイトル
      * @param string $description 動画概要欄
      * @param string $videoUrl 動画のURL
-     * @return array<string, mixed> 生成されたレシピデータ
+     * @return GeneratedRecipeData 生成されたレシピデータ
      * @throws Exception
      */
-    public function generateRecipe(string $title, string $description, string $videoUrl): array
+    public function generateRecipe(string $title, string $description, string $videoUrl): GeneratedRecipeData
     {
         $recipeSchema = [
             'type' => 'OBJECT',
@@ -188,6 +189,6 @@ class GeminiService implements LLMServiceInterface
             throw new Exception('Failed to decode recipe JSON from AI response.');
         }
 
-        return $result;
+        return GeneratedRecipeData::fromArray($result);
     }
 }

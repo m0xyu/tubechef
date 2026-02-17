@@ -2,6 +2,9 @@
 
 namespace App\Actions;
 
+use App\Dtos\GeneratedRecipeData;
+use App\Dtos\IngredientData;
+use App\Dtos\RecipeTipData;
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Models\Dish;
@@ -44,7 +47,7 @@ class GenerateRecipeAction
             throw new RecipeException(RecipeError::GENERATION_FAILED, previous: $e);
         }
 
-        if (empty($result['is_recipe'])) {
+        if (!$result->isRecipe) {
             throw new RecipeException(RecipeError::NOT_A_RECIPE);
         }
 
@@ -65,35 +68,35 @@ class GenerateRecipeAction
      * 生成されたレシピデータをデータベースに保存する
      * 
      * @param Video $video
-     * @param array<string, mixed> $result
+     * @param GeneratedRecipeData $result
      * @return Recipe
      */
-    private function saveRecipe(Video $video, array $result): Recipe
+    private function saveRecipe(Video $video, GeneratedRecipeData $result): Recipe
     {
         $dish = Dish::firstOrCreate(
-            ['slug' => $result['dish_slug']],
-            ['name' => $result['dish_name']]
+            ['slug' => $result->dishSlug],
+            ['name' => $result->dishName]
         );
 
         $recipe = Recipe::create([
             'video_id' => $video->id,
             'dish_id' => $dish->id,
             'slug' => $video->video_id,
-            'title' => $result['title'],
-            'summary' => $result['summary'] ?? null,
-            'serving_size' => $result['serving_size'] ?? null,
-            'cooking_time' => $result['cooking_time'] ?? null,
+            'title' => $result->title,
+            'summary' => $result->summary ?? null,
+            'serving_size' => $result->servingSize ?? null,
+            'cooking_time' => $result->cookingTime ?? null,
         ]);
 
         $now = now(); // 一括挿入時はタイムスタンプが自動付与されないため
 
-        $ingredients = collect((array)$result['ingredients'])->map(function ($item, $index) use ($recipe, $now) {
+        $ingredients = collect($result->ingredients)->map(function (IngredientData $item) use ($recipe, $now) {
             return [
-                'recipe_id' => $recipe->id,
-                'name'      => $item['name'],
-                'quantity'  => $item['quantity'] ?? null,
-                'group'     => $item['group'] ?? null,
-                'order'     => $index,
+                'recipe_id'  => $recipe->id,
+                'name'       => $item->name,
+                'quantity'   => $item->quantity,
+                'group'      => $item->group,
+                'order'      => $item->order,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -101,30 +104,27 @@ class GenerateRecipeAction
         $recipe->ingredients()->insert($ingredients);
 
         $stepNumberToIdMap = [];
-        foreach ($result['steps'] as $stepData) {
+        foreach ($result->steps as $stepData) {
             $step = $recipe->steps()->create([
-                'step_number' => $stepData['step_number'],
-                'description' => $stepData['description'],
-                'start_time_in_seconds' => $stepData['start_time_in_seconds'] ?? null,
-                'end_time_in_seconds' => $stepData['end_time_in_seconds'] ?? null,
+                'step_number'           => $stepData->stepNumber,
+                'description'           => $stepData->description,
+                'start_time_in_seconds' => $stepData->startTimeInSeconds,
+                'end_time_in_seconds'   => $stepData->endTimeInSeconds,
             ]);
-            $stepNumberToIdMap[$stepData['step_number']] = $step->id;
+            $stepNumberToIdMap[$stepData->stepNumber] = $step->id;
         }
 
-        if (!empty($result['tips'])) {
-            $tips = collect((array)$result['tips'])->map(function ($item) use ($recipe, $stepNumberToIdMap, $now) {
-                $relatedStepId = null;
-                if (isset($item['related_step_number']) && isset($stepNumberToIdMap[$item['related_step_number']])) {
-                    $relatedStepId = $stepNumberToIdMap[$item['related_step_number']];
-                }
+        if (!empty($result->tips)) {
+            $tips = collect($result->tips)->map(function (RecipeTipData $item) use ($recipe, $stepNumberToIdMap, $now) {
+                $relatedStepId = $stepNumberToIdMap[$item->relatedStepNumber] ?? null;
 
                 return [
-                    'recipe_id'      => $recipe->id,
-                    'recipe_step_id' => $relatedStepId,
-                    'description'    => $item['description'],
-                    'start_time_in_seconds' => $item['start_time_in_seconds'] ?? null,
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
+                    'recipe_id'             => $recipe->id,
+                    'recipe_step_id'        => $relatedStepId,
+                    'description'           => $item->description,
+                    'start_time_in_seconds' => $item->startTimeInSeconds,
+                    'created_at'            => $now,
+                    'updated_at'            => $now,
                 ];
             })->toArray();
             $recipe->tips()->insert($tips);

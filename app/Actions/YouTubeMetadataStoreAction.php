@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Dtos\YouTubeFullMetadataData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
 use App\Models\Channel;
@@ -14,43 +15,43 @@ class YouTubeMetadataStoreAction
 {
     /**
      * YouTube動画のメタデータを保存する
-     * @param array<string, mixed> $metadata
+     * @param YouTubeFullMetadataData $metadata
      * @return Video
      * @throws VideoException
      */
-    public function execute(array $metadata): Video
+    public function execute(YouTubeFullMetadataData $metadata): Video
     {
         try {
             return DB::transaction(function () use ($metadata) {
                 // チャンネル情報の保存
                 $channel = Channel::updateOrCreate(
-                    ['channel_id' => $metadata['channel_id']],
+                    ['channel_id' => $metadata->video->channelId],
                     [
-                        'name' => $metadata['channel_name'],
-                        'description' => $metadata['channel_description'],
-                        'thumbnail_url' => $metadata['channel_thumbnail_url'],
-                        'custom_url' => $metadata['channel_custom_url'],
-                        'subscriber_count' => $metadata['subscriber_count'],
-                        'view_count' => $metadata['channel_view_count'],
-                        'video_count' => $metadata['channel_video_count'],
+                        'name' => $metadata->video->channelName,
+                        'description' => $metadata->channel->channelDescription,
+                        'thumbnail_url' => $metadata->channel->channelThumbnailUrl,
+                        'custom_url' => $metadata->channel->channelCustomUrl,
+                        'subscriber_count' => $metadata->channel->subscriberCount,
+                        'view_count' => $metadata->channel->channelViewCount,
+                        'video_count' => $metadata->channel->channelVideoCount,
                     ]
                 );
 
                 // 動画情報の保存
                 $video = Video::updateOrCreate(
-                    ['video_id' => $metadata['video_id']],
+                    ['video_id' => $metadata->video->videoId],
                     [
                         'channel_id' => $channel->id,
-                        'title' => $metadata['title'],
-                        'description' => $metadata['description'],
-                        'thumbnail_url' => $metadata['thumbnail_url'],
-                        'category_id' => $metadata['category_id'],
-                        'published_at' => $metadata['published_at'],
-                        'view_count' => $metadata['view_count'],
-                        'duration' => $metadata['duration'],
-                        'like_count' => $metadata['like_count'],
-                        'comment_count' => $metadata['comment_count'],
-                        'topic_categories' => $metadata['topic_categories'],
+                        'title' => $metadata->video->title,
+                        'description' => $metadata->video->description,
+                        'thumbnail_url' => $metadata->video->thumbnailUrl,
+                        'category_id' => $metadata->video->categoryId,
+                        'published_at' => $metadata->video->publishedAt,
+                        'view_count' => $metadata->video->viewCount,
+                        'duration' => $metadata->video->durationSeconds,
+                        'like_count' => $metadata->video->likeCount,
+                        'comment_count' => $metadata->video->commentCount,
+                        'topic_categories' => $metadata->video->topicCategories,
                         'fetched_at' => now(),
                     ]
                 );
@@ -59,7 +60,7 @@ class YouTubeMetadataStoreAction
             });
         } catch (Throwable $e) {
             Log::error('動画データの保存に失敗しました: ' . $e->getMessage(), [
-                'video_id' => $metadata['video_id'] ?? 'unknown',
+                'video_id' => $metadata->video->videoId ?? 'unknown',
                 'trace' => $e->getTraceAsString()
             ]);
 
