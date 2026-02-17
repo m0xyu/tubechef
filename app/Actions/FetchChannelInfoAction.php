@@ -16,9 +16,10 @@ class FetchChannelInfoAction
      */
     public function execute(string $channelId): YouTubeChannelData
     {
+        $baseUrl = config('services.youtube.base_url');
         $apiKey = config('services.google.api_key');
 
-        $response = Http::get('https://www.googleapis.com/youtube/v3/channels', [
+        $response = Http::get("{$baseUrl}/channels", [
             'part' => 'snippet,statistics',
             'id' => $channelId,
             'key' => $apiKey,

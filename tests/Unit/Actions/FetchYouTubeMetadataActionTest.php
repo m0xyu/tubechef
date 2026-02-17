@@ -4,6 +4,7 @@ use App\Actions\FetchYouTubeMetadataAction;
 use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
+use App\ValueObjects\YouTubeVideoId;
 use Illuminate\Support\Facades\Http;
 
 describe('FetchYouTubeMetadataActionTest', function () {
@@ -43,7 +44,7 @@ describe('FetchYouTubeMetadataActionTest', function () {
         ]);
 
         $action = new FetchYouTubeMetadataAction();
-        $channelInfo = $action->execute('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        $channelInfo = $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'));
 
         expect($channelInfo)->toEqual(new YouTubeVideoData(
             videoId: 'dQw4w9WgXcQ',
@@ -74,7 +75,7 @@ describe('FetchYouTubeMetadataActionTest', function () {
 
         $action = new FetchYouTubeMetadataAction();
 
-        expect(fn() => $action->execute('https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
+        expect(fn() => $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
             ->toThrow(VideoException::class, VideoError::NOT_A_VIDEO->message());
     });
 
@@ -85,14 +86,21 @@ describe('FetchYouTubeMetadataActionTest', function () {
 
         $action = new FetchYouTubeMetadataAction();
 
-        expect(fn() => $action->execute('https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
+        expect(fn() => $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
             ->toThrow(VideoException::class, VideoError::FETCH_FAILED->message());
     });
 
     test('異常：渡されたのがurlではない場合', function () {
         $action = new FetchYouTubeMetadataAction();
 
-        expect(fn() => $action->execute('invalid_video_id'))
+        expect(fn() => $action->execute(YouTubeVideoId::fromString('invalid_id')))
             ->toThrow(VideoException::class, VideoError::INVALID_ID->message());
     });
+
+    // test('異常：Actionに不正な文字列を渡すと型エラーになる（静的解析・実行時ガード）', function () {
+    //     $action = new FetchYouTubeMetadataAction();
+
+    //     expect(fn() => $action->execute('not_a_value_object'))
+    //         ->toThrow(TypeError::class);
+    // });
 });

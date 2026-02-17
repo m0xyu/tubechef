@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
+use App\ValueObjects\YouTubeVideoId;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
@@ -16,19 +17,19 @@ class FetchYouTubeMetadataAction
     /**
      * 動画のURLからYouTubeのメタデータを取得します。
      *
-     * @param string $url YouTubeのURL
+     * @param YouTubeVideoId $videoId
      * @param array<string> $parts 取得するメタデータのパーツ（デフォルトはプレビュー用）PARTS_PREVIEWまたはPARTS_FULLを使用
      * @return YouTubeVideoData 動画のメタデータ（タイトル、概要、サムネイルなど）
      * @throws VideoException 取得失敗時
      */
-    public function execute(string $url, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
+    public function execute(YouTubeVideoId $videoId, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
     {
-        $videoId = $this->extractVideoId($url);
-
+        $baseUrl = config('services.youtube.base_url');
         $apiKey = config('services.google.api_key');
-        $response = Http::get('https://www.googleapis.com/youtube/v3/videos', [
+
+        $response = Http::get("{$baseUrl}/videos", [
             'part' => implode(',', $parts),
-            'id' => $videoId,
+            'id' => (string)$videoId,
             'key' => $apiKey,
         ]);
 
@@ -52,7 +53,7 @@ class FetchYouTubeMetadataAction
         $durationSeconds = $this->convertDurationToSeconds($details['duration'] ?? null);
 
         $resultArray = [
-            'video_id' => $videoId,
+            'video_id' => (string)$videoId,
             'title' => $snippet['title'] ?? null,
             'channel_name' => $snippet['channelTitle'] ?? null,
             'channel_id' => $snippet['channelId'] ?? null,
@@ -68,29 +69,6 @@ class FetchYouTubeMetadataAction
         ];
 
         return YouTubeVideoData::fromArray($resultArray);
-    }
-
-    /**
-     * URLから動画IDを抽出する
-     * 対応形式: 
-     * - https://www.youtube.com/watch?v=dQw4w9WgXcQ
-     * - https://youtu.be/dQw4w9WgXcQ
-     * - dQw4w9WgXcQ (ID直接)
-     * @param string $url YouTubeのURLまたは動画ID
-     * @return string 抽出された動画ID
-     * @throws VideoException 動画IDが抽出できない場合
-     */
-    public function extractVideoId(string $url): string
-    {
-        if (preg_match('/^[\w-]{11}$/', $url)) {
-            return $url;
-        }
-
-        if (preg_match('/(?:v=|\/)([\w-]{11})(?:&|\?|\/|$)/', $url, $matches)) {
-            return $matches[1];
-        }
-
-        throw new VideoException(VideoError::INVALID_ID);
     }
 
     /**
