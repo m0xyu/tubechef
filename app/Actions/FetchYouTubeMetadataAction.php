@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
 use Exception;
@@ -17,10 +18,10 @@ class FetchYouTubeMetadataAction
      *
      * @param string $url YouTubeのURL
      * @param array<string> $parts 取得するメタデータのパーツ（デフォルトはプレビュー用）PARTS_PREVIEWまたはPARTS_FULLを使用
-     * @return array<string, mixed> 動画のメタデータ（タイトル、概要、サムネイルなど）
-     * @throws Exception 取得失敗時
+     * @return YouTubeVideoData 動画のメタデータ（タイトル、概要、サムネイルなど）
+     * @throws VideoException 取得失敗時
      */
-    public function execute(string $url, array $parts = self::PARTS_PREVIEW): array
+    public function execute(string $url, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
     {
         $videoId = $this->extractVideoId($url);
 
@@ -50,7 +51,7 @@ class FetchYouTubeMetadataAction
         $cleanTags = $this->extractTopicNames($topicDetails['topicCategories'] ?? []);
         $durationSeconds = $this->convertDurationToSeconds($details['duration'] ?? null);
 
-        return [
+        $resultArray = [
             'video_id' => $videoId,
             'title' => $snippet['title'] ?? null,
             'channel_name' => $snippet['channelTitle'] ?? null,
@@ -65,6 +66,8 @@ class FetchYouTubeMetadataAction
             'comment_count' => $statistics['commentCount'] ?? null,
             'topic_categories' => $cleanTags,
         ];
+
+        return YouTubeVideoData::fromArray($resultArray);
     }
 
     /**

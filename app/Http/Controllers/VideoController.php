@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\FetchChannelInfoAction;
 use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\YouTubeMetadataStoreAction;
+use App\Dtos\YouTubeFullMetadataData;
 use App\Enums\Errors\VideoError;
 use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\VideoException;
@@ -35,7 +36,18 @@ class VideoController extends Controller
 
         if (!$video) {
             $metadata = $fetchYouTubeMetadata->execute($request->getVideoUrl(), FetchYouTubeMetadataAction::PARTS_PREVIEW);
-            $video = (new Video())->forceFill($metadata);
+            $video = (new Video())->forceFill([
+                'video_id'         => $metadata->videoId,
+                'title'            => $metadata->title,
+                'channel_name'     => $metadata->channelName,
+                'channel_id'       => $metadata->channelId,
+                'category_id'      => $metadata->categoryId,
+                'description'      => $metadata->description,
+                'thumbnail_url'    => $metadata->thumbnailUrl,
+                'published_at'     => $metadata->publishedAt,
+                'duration'         => $metadata->durationSeconds,
+                'topic_categories' => $metadata->topicCategories,
+            ]);
         }
 
         return (new VideoPreviewResource($video))
@@ -75,16 +87,19 @@ class VideoController extends Controller
             }
         }
 
-        $metadata = $fetchYouTubeMetadata->execute(
+        $videoData = $fetchYouTubeMetadata->execute(
             $request->getVideoUrl(),
             FetchYouTubeMetadataAction::PARTS_FULL
         );
 
-        $channelInfo = $fetchChannelInfo->execute($metadata['channel_id']);
-        $metadata = array_merge($metadata, $channelInfo);
+        $channelData = $fetchChannelInfo->execute($videoData->channelId);
+        $youtubeMetadata = new YouTubeFullMetadataData(
+            $videoData,
+            $channelData
+        );
 
-        $video = DB::transaction(function () use ($youTubeMetadataStore, $metadata, $request) {
-            $video = $youTubeMetadataStore->execute($metadata);
+        $video = DB::transaction(function () use ($youTubeMetadataStore, $youtubeMetadata, $request) {
+            $video = $youTubeMetadataStore->execute($youtubeMetadata);
 
             $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
             $request->user()->historyVideos()->syncWithoutDetaching([$video->id]);

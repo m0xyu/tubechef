@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\FetchYouTubeMetadataAction;
+use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
 use Illuminate\Support\Facades\Http;
@@ -32,7 +33,10 @@ describe('FetchYouTubeMetadataActionTest', function () {
                         'commentCount' => '10',
                     ],
                     'topicDetails' => [
-                        'topicCategories' => ['https://en.wikipedia.org/wiki/Food']
+                        'topicCategories' => [
+                            'https://en.wikipedia.org/wiki/Food',
+                            'https://en.wikipedia.org/wiki/Lifestyle_(sociology)'
+                        ],
                     ]
                 ]]
             ], 200)
@@ -41,21 +45,21 @@ describe('FetchYouTubeMetadataActionTest', function () {
         $action = new FetchYouTubeMetadataAction();
         $channelInfo = $action->execute('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
-        expect($channelInfo)->toEqual([
-            'video_id' => 'dQw4w9WgXcQ',
-            'title' => 'Delicious Curry',
-            'channel_name' => 'Chef Ryuji',
-            'channel_id' => 'UC12345',
-            'category_id' => '10',
-            'description' => 'This is a description.',
-            'thumbnail_url' => 'https://example.com/thumb.jpg',
-            'published_at' => '2023-01-01T12:00:00Z',
-            'duration' => 930,
-            'view_count' => '1000',
-            'like_count' => '100',
-            'comment_count' => '10',
-            'topic_categories' => ['Food'],
-        ]);
+        expect($channelInfo)->toEqual(new YouTubeVideoData(
+            videoId: 'dQw4w9WgXcQ',
+            title: 'Delicious Curry',
+            channelName: 'Chef Ryuji',
+            channelId: 'UC12345',
+            categoryId: 10,
+            description: 'This is a description.',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            publishedAt: '2023-01-01T12:00:00Z',
+            durationSeconds: 930,
+            viewCount: 1000,
+            likeCount: 100,
+            commentCount: 10,
+            topicCategories: ['Food', 'Lifestyle (sociology)']
+        ));
     });
 
     test('異常：kindがvideo以外の場合', function () {
