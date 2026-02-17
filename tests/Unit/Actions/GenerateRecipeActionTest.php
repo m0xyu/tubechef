@@ -14,25 +14,27 @@ uses(RefreshDatabase::class);
 describe('GenerateRecipeActionTest', function () {
     test('レシピが正常に保存される', function () {
         $mock = Mockery::mock(LLMServiceInterface::class);
+        $data = [
+            'is_recipe' => true,
+            'title' => 'Delicious Curry',
+            'ingredients' => [
+                ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat'],
+                ['name' => 'Onion', 'quantity' => '1', 'group' => 'Vegetable']
+            ],
+            'steps' => [
+                ['step_number' => 1, 'description' => 'Cut the chicken.', 'start_time_in_seconds' => 0],
+                ['step_number' => 2, 'description' => 'Chop the onion.', 'start_time_in_seconds' => 30],
+            ],
+            'tips' => [
+                ['description' => 'Use fresh chicken for better taste.', 'related_step_number' => 1, 'start_time_in_seconds' => 0],
+            ],
+            'dish_name' => 'Curry',
+            'dish_slug' => 'curry',
+        ];
+
         $mock->shouldReceive('generateRecipe')
             ->once()
-            ->andReturn([
-                'is_recipe' => true,
-                'title' => 'Delicious Curry',
-                'ingredients' => [
-                    ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat'],
-                    ['name' => 'Onion', 'quantity' => '1', 'group' => 'Vegetable']
-                ],
-                'steps' => [
-                    ['step_number' => 1, 'description' => 'Cut the chicken.', 'start_time_in_seconds' => 0],
-                    ['step_number' => 2, 'description' => 'Chop the onion.', 'start_time_in_seconds' => 30],
-                ],
-                'tips' => [
-                    ['description' => 'Use fresh chicken for better taste.', 'related_step_number' => 1, 'start_time_in_seconds' => 0],
-                ],
-                'dish_name' => 'Curry',
-                'dish_slug' => 'curry',
-            ]);
+            ->andReturn(\App\Dtos\GeneratedRecipeData::fromArray($data));
 
         $factoryMock = Mockery::mock(LLMServiceFactory::class);
         $factoryMock->shouldReceive('make')
@@ -58,25 +60,27 @@ describe('GenerateRecipeActionTest', function () {
 
     test('is_recipeがfalseの場合RecipeExceptionが投げられる', function () {
         $mock = Mockery::mock(LLMServiceInterface::class);
+        $data = [
+            'is_recipe' => false,
+            'title' => 'Delicious Curry',
+            'ingredients' => [
+                ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat'],
+                ['name' => 'Onion', 'quantity' => '1', 'group' => 'Vegetable']
+            ],
+            'steps' => [
+                ['step_number' => 1, 'description' => 'Cut the chicken.', 'start_time_in_seconds' => 0],
+                ['step_number' => 2, 'description' => 'Chop the onion.', 'start_time_in_seconds' => 30],
+            ],
+            'tips' => [
+                ['description' => 'Use fresh chicken for better taste.', 'related_step_number' => 1, 'start_time_in_seconds' => 0],
+            ],
+            'dish_name' => 'Curry',
+            'dish_slug' => 'curry',
+        ];
+
         $mock->shouldReceive('generateRecipe')
             ->once()
-            ->andReturn([
-                'is_recipe' => false,
-                'title' => 'Delicious Curry',
-                'ingredients' => [
-                    ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat'],
-                    ['name' => 'Onion', 'quantity' => '1', 'group' => 'Vegetable']
-                ],
-                'steps' => [
-                    ['step_number' => 1, 'description' => 'Cut the chicken.', 'start_time_in_seconds' => 0],
-                    ['step_number' => 2, 'description' => 'Chop the onion.', 'start_time_in_seconds' => 30],
-                ],
-                'tips' => [
-                    ['description' => 'Use fresh chicken for better taste.', 'related_step_number' => 1, 'start_time_in_seconds' => 0],
-                ],
-                'dish_name' => 'Curry',
-                'dish_slug' => 'curry',
-            ]);
+            ->andReturn(\App\Dtos\GeneratedRecipeData::fromArray($data));
 
         $factoryMock = Mockery::mock(LLMServiceFactory::class);
         $factoryMock->shouldReceive('make')
