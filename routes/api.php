@@ -6,19 +6,25 @@ use App\Http\Controllers\VideoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
     Route::prefix('/user')->name('user.')->group(function () {
         Route::get('/library', [UserController::class, 'library'])->name('library');
         Route::delete('/library/{video_id}', [UserController::class, 'library_delete'])->name('library_delete');
     });
 
     Route::prefix('/videos')->name('videos.')->group(function () {
-        Route::post('/preview', [VideoController::class, 'preview'])->name('preview');
-        Route::post('/', [VideoController::class, 'store'])->name('store');
+        Route::middleware(['throttle:youtube-api'])->group(function () {
+            Route::post('/preview', [VideoController::class, 'preview'])->name('preview');
+        });
+
+        Route::middleware(['auth:sanctum', 'throttle:gemini-generator'])->group(function () {
+            Route::post('/', [VideoController::class, 'store'])->name('store');
+        });
+
         Route::get('/{videoId}/status', [VideoController::class, 'checkStatus'])->name('checkStatus');
     });
 });
