@@ -135,10 +135,7 @@ class Video extends Model
      */
     public function hasExceededRetryLimit(): bool
     {
-        // 失敗ステータス以外なら、そもそもリトライ上限という概念は適用外（あるいはfalse）
-        // ここでは「失敗していて、かつ回数オーバー」を判定
-        return $this->recipe_generation_status === RecipeGenerationStatus::FAILED
-            && $this->generation_retry_count >= config('services.gemini.retry_count', 2);
+        return $this->generation_retry_count >= config('services.gemini.retry_count', 2);
     }
 
     /**

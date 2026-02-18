@@ -88,6 +88,10 @@ class VideoPreviewResource extends JsonResource
             return 'limit_exceeded';
         }
 
+        if ($status === RecipeGenerationStatus::FAILED) {
+            return 'retry';
+        }
+
         // 上記以外（新規、またはリトライ回数が残っている） -> 「生成する」
         return 'generate';
     }
