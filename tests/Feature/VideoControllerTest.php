@@ -40,7 +40,7 @@ describe('Video Controller: preview', function () {
                 'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
                 'data' => [

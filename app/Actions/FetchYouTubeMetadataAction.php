@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 
 class FetchYouTubeMetadataAction
 {
-    public const PARTS_PREVIEW = ['snippet', 'contentDetails'];
+    public const PARTS_PREVIEW = ['snippet', 'contentDetails', 'topicDetails'];
     public const PARTS_FULL = ['snippet', 'contentDetails', 'statistics', 'topicDetails'];
 
     /**
@@ -73,7 +73,7 @@ class FetchYouTubeMetadataAction
 
     /**
      * WikipediaのURLリストから、トピック名だけを抽出する
-     * 例: https://en.wikipedia.org/wiki/Lifestyle_(sociology) -> "Lifestyle (sociology)"
+     * 例: https://en.wikipedia.org/wiki/Food -> "Food"
      * 
      * @param array<string> $urls WikipediaのURLリスト
      * @return array<string> 抽出されたトピック名のリスト
