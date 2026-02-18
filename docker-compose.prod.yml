@@ -2,7 +2,7 @@ services:
     tubechef-app:
         build:
             context: .
-            dockerfile: ./vendor/laravel/sail/runtimes/8.4/Dockerfile
+            dockerfile: Dockerfile
 
         ports:
             - "8001:80"
@@ -39,7 +39,7 @@ services:
     tubechef-worker:
         build:
             context: .
-            dockerfile: ./vendor/laravel/sail/runtimes/8.4/Dockerfile
+            dockerfile: Dockerfile
         command: php artisan queue:work --tries=3
         volumes:
             - ".:/var/www/html"
