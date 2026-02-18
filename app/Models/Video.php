@@ -76,6 +76,7 @@ class Video extends Model
         'fetched_at',
         'recipe_generation_status',
         'recipe_generation_error_message',
+        'generation_retry_count',
     ];
 
     protected $casts = [
