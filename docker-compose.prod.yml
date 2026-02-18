@@ -1,0 +1,59 @@
+services:
+    tubechef-app:
+        build:
+            context: .
+            dockerfile: ./vendor/laravel/sail/runtimes/8.4/Dockerfile
+
+        ports:
+            - "8001:80"
+        environment:
+            LARAVEL_SAIL: 1
+        volumes:
+            - ".:/var/www/html"
+        networks:
+            - tubechef-network
+        depends_on:
+            - tubechef-mysql
+            - tubechef-redis
+
+    tubechef-mysql:
+        image: 'mysql/mysql-server:8.0'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+        # ホストへのポート開放(ports)は削除（セキュリティのため内部のみ）
+        volumes:
+            - 'tubechef-mysql-data:/var/lib/mysql'
+        networks:
+            - tubechef-network
+
+    tubechef-redis:
+        image: 'redis:alpine'
+        volumes:
+            - 'tubechef-redis-data:/data'
+        networks:
+            - tubechef-network
+
+    tubechef-worker:
+        build:
+            context: .
+            dockerfile: ./vendor/laravel/sail/runtimes/8.4/Dockerfile
+        command: php artisan queue:work --tries=3
+        volumes:
+            - ".:/var/www/html"
+        networks:
+            - tubechef-network
+        depends_on:
+            - tubechef-redis
+
+networks:
+    tubechef-network:
+        driver: bridge
+
+volumes:
+    tubechef-mysql-data:
+        driver: local
+    tubechef-redis-data:
+        driver: local
