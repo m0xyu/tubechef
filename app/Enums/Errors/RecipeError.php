@@ -19,7 +19,7 @@ enum RecipeError: string
     public function message(): string
     {
         return match ($this) {
-            self::NOT_A_RECIPE => 'この動画はレシピとして認識されませんでした。',
+            self::NOT_A_RECIPE => '料理カテゴリ外のため、生成対象外です。',
             self::GENERATION_FAILED => 'AIによるレシピ生成に失敗しました。',
             self::SAVE_FAILED => 'レシピの保存に失敗しました。',
         };
