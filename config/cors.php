@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        env('FRONTEND_URL', 'https://tubechef-frontend.pages.dev'),
+        env('FRONTEND_URL', 'https://app.cosmethod.com/'),
         'http://localhost:5173',
     ],
 

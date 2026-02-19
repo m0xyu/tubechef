@@ -23,7 +23,6 @@ services:
             MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USERNAME}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
-        # ホストへのポート開放(ports)は削除（セキュリティのため内部のみ）
         volumes:
             - 'tubechef-mysql-data:/var/lib/mysql'
         networks:
@@ -40,14 +39,15 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-            args:
-                WWWGROUP: 1000
-        command: php artisan queue:work --tries=3
+        restart: always
+        entrypoint: ["php", "/var/www/html/artisan", "queue:work"]
+        command: ["--tries=3", "--memory=128", "--timeout=60"]
         volumes:
             - ".:/var/www/html"
         networks:
             - tubechef-network
         depends_on:
+            - tubechef-mysql
             - tubechef-redis
 
 networks:
