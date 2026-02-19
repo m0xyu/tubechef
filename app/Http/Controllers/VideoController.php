@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\FetchChannelInfoAction;
 use App\Actions\FetchYouTubeMetadataAction;
+use App\Actions\GetVideoPreviewAction;
 use App\Actions\YouTubeMetadataStoreAction;
 use App\Dtos\YouTubeFullMetadataData;
 use App\Enums\Errors\VideoError;
@@ -21,35 +22,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class VideoController extends Controller
 {
     /**
-     * 入力されたYouTube動画のプレビュー用メタデータを返す
+     * 入力されたYouTubeURLの動画のプレビュー用メタデータを返す
      *
      * @param VideoUrlRequest $request
-     * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
+     * @param GetVideoPreviewAction $getVideoPreview
      * @return VideoPreviewResource
      */
-    public function preview(VideoUrlRequest $request, FetchYouTubeMetadataAction $fetchYouTubeMetadata): VideoPreviewResource
+    public function preview(VideoUrlRequest $request, GetVideoPreviewAction $getVideoPreview): VideoPreviewResource
     {
         $videoId = YouTubeVideoId::fromUrl($request->getVideoUrl());
 
-        $video = Video::where('video_id', (string)$videoId)
-            ->with(['recipe'])
-            ->first();
-
-        if (!$video) {
-            $metadata = $fetchYouTubeMetadata->execute($videoId, FetchYouTubeMetadataAction::PARTS_PREVIEW);
-            $video = (new Video())->forceFill([
-                'video_id'         => $metadata->videoId,
-                'title'            => $metadata->title,
-                'channel_name'     => $metadata->channelName,
-                'channel_id'       => $metadata->channelId,
-                'category_id'      => $metadata->categoryId,
-                'description'      => $metadata->description,
-                'thumbnail_url'    => $metadata->thumbnailUrl,
-                'published_at'     => $metadata->publishedAt,
-                'duration'         => $metadata->durationSeconds,
-                'topic_categories' => $metadata->topicCategories,
-            ]);
-        }
+        $video = $getVideoPreview->execute($videoId);
 
         return (new VideoPreviewResource($video))
             ->additional([

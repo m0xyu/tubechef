@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\GenerateRecipeAction;
+use App\Enums\Errors\RecipeError;
 use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\RecipeException;
 use App\Models\Video;
@@ -76,10 +77,15 @@ class GenerateRecipeJob implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
+        $retryLimit = config('services.gemini.retry_count', 2);
+
+        $isFatal = ($exception instanceof RecipeException && $exception->error === RecipeError::NOT_A_RECIPE);
+        $newCount = $isFatal ? $retryLimit + 1 : $this->video->generation_retry_count + 1;
+
         $this->video->update([
             'recipe_generation_status' => RecipeGenerationStatus::FAILED,
             'recipe_generation_error_message' => $exception->getMessage(),
+            'generation_retry_count' => $newCount,
         ]);
-        $this->video->increment('generation_retry_count');
     }
 }
