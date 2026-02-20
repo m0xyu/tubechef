@@ -21,7 +21,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/preview', [VideoController::class, 'preview'])->name('preview');
         });
 
-        Route::middleware(['auth:sanctum', 'throttle:gemini-generator'])->group(function () {
+        Route::middleware(['throttle:gemini-generator'])->group(function () {
             Route::post('/', [VideoController::class, 'store'])->name('store');
         });
 
