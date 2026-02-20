@@ -20,7 +20,7 @@ final readonly class YouTubeVideoId implements \Stringable
      */
     public static function fromUrl(string $url): YouTubeVideoId
     {
-        $pattern = '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s?]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/';
+        $pattern = '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|v\/|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/';
 
         if (preg_match($pattern, $url, $matches)) {
             return new self($matches[1]);

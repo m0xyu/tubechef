@@ -2,26 +2,35 @@
 
 namespace App\Enums\Errors;
 
+use App\Attributes\ErrorDetails;
+use ReflectionEnumBackedCase;
+
 enum RecipeError: string
 {
-    // AIが「これはレシピ動画じゃない」と判断した
+    #[ErrorDetails('料理カテゴリ外のため、生成対象外です。', 422)]
     case NOT_A_RECIPE = 'not_a_recipe';
 
-        // Gemini APIがエラーを吐いた（通信エラー、レート制限など）
+    #[ErrorDetails('AIによるレシピ生成に失敗しました。', 500)]
     case GENERATION_FAILED = 'generation_failed';
 
-        // DB保存に失敗した
+    #[ErrorDetails('レシピの保存に失敗しました。', 500)]
     case SAVE_FAILED = 'save_failed';
 
-    /**
-     * エラーメッセージを取得（ログやデバッグ用）
-     */
     public function message(): string
     {
-        return match ($this) {
-            self::NOT_A_RECIPE => '料理カテゴリ外のため、生成対象外です。',
-            self::GENERATION_FAILED => 'AIによるレシピ生成に失敗しました。',
-            self::SAVE_FAILED => 'レシピの保存に失敗しました。',
-        };
+        return $this->getDetails()->message;
+    }
+
+    public function status(): int
+    {
+        return $this->getDetails()->statusCode;
+    }
+
+    private function getDetails(): ErrorDetails
+    {
+        $reflection = new ReflectionEnumBackedCase($this, $this->name);
+        $attributes = $reflection->getAttributes(ErrorDetails::class);
+
+        return $attributes[0]->newInstance();
     }
 }

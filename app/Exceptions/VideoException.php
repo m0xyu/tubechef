@@ -10,7 +10,10 @@ class VideoException extends Exception
 {
     public function __construct(protected VideoError $error)
     {
-        parent::__construct($error->message(), $error->status());
+        parent::__construct(
+            $error->message(),
+            $error->status()
+        );
     }
 
     public function render(): JsonResponse

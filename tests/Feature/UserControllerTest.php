@@ -5,11 +5,7 @@ use App\Models\User;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\assertDatabaseMissing;
-use function Pest\Laravel\getJson;
-use function Pest\Laravel\postJson;
-use function Pest\Laravel\deleteJson;
+use function Pest\Laravel\{actingAs, assertDatabaseMissing};
 
 uses(RefreshDatabase::class);
 
