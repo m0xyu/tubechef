@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\YouTubeUrlRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class VideoUrlRequest extends FormRequest
@@ -24,9 +25,8 @@ class VideoUrlRequest extends FormRequest
         return [
             'video_url' => [
                 'required',
-                'string',
                 'url',
-                'regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/'
+                new YouTubeUrlRule(),
             ],
         ];
     }

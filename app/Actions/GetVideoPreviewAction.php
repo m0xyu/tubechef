@@ -3,10 +3,10 @@
 namespace App\Actions;
 
 use App\Dtos\YouTubeVideoData;
-use App\Enums\Errors\RecipeError;
+use App\Enums\Errors\VideoError;
 use App\Models\Video;
 use App\Enums\RecipeGenerationStatus;
-use App\Exceptions\RecipeException;
+use App\Exceptions\VideoException;
 use App\Models\Channel;
 use App\ValueObjects\YouTubeVideoId;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class GetVideoPreviewAction
 
     /**
      * 動画のプレビュー用インスタンスを取得する
-     * 料理以外はここで「最終失敗」として保存される
+     * 不適格な動画はここで「最終失敗」として保存される
      * @param YouTubeVideoId $videoId
      * @return Video 
      */
@@ -32,8 +32,10 @@ class GetVideoPreviewAction
 
         $metadata = $this->fetchYouTubeMetadata->execute($videoId, FetchYouTubeMetadataAction::PARTS_PREVIEW);
 
-        if (!in_array('Food', $metadata->topicCategories ?? [])) {
-            return $this->createInvalidVideo($metadata);
+        $invalidError = $this->getInvalidReason($metadata);
+
+        if ($invalidError) {
+            return $this->createInvalidVideo($metadata, $invalidError);
         }
 
         return (new Video())->forceFill([
@@ -51,12 +53,32 @@ class GetVideoPreviewAction
     }
 
     /**
-     * 料理動画ではないものを「生成不可」として永続化する
-     * @param YouTubeVideoData $metadata 
+     * 不適格な理由を判定する
+     * @param YouTubeVideoData $metadata
+     * @return VideoError|null
      */
-    private function createInvalidVideo(YouTubeVideoData $metadata): Video
+    private function getInvalidReason(YouTubeVideoData $metadata): ?VideoError
     {
-        return DB::transaction(function () use ($metadata) {
+        if (!in_array('Food', $metadata->topicCategories ?? [])) {
+            return VideoError::NOT_A_FOOD_CATEGORY;
+        }
+
+        // 2. 短すぎる（Shorts相当）
+        if ($metadata->durationSeconds <= 60) {
+            return VideoError::VIDEO_TOO_SHORT;
+        }
+
+        return null;
+    }
+
+    /**
+     * 不適格ん動画でを「生成不可」として永続化する
+     * @param YouTubeVideoData $metadata 
+     * @return Video
+     */
+    private function createInvalidVideo(YouTubeVideoData $metadata, VideoError $error): Video
+    {
+        return DB::transaction(function () use ($metadata, $error) {
             $channel = Channel::firstOrCreate(
                 ['channel_id' => $metadata->channelId],
                 ['name' => $metadata->channelName]
@@ -73,7 +95,7 @@ class GetVideoPreviewAction
                 'duration'         => $metadata->durationSeconds,
                 'topic_categories' => $metadata->topicCategories,
                 'recipe_generation_status' => RecipeGenerationStatus::FAILED,
-                'recipe_generation_error_message' => (new RecipeException(RecipeError::NOT_A_RECIPE))->getMessage(),
+                'recipe_generation_error_message' => (new VideoException($error))->getMessage(),
                 'generation_retry_count' => config('services.gemini.retry_count', 2) + 1,
             ]);
         });

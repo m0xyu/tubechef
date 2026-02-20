@@ -1,12 +1,16 @@
 <?php
 
+use App\Actions\FetchChannelInfoAction;
+use App\Actions\FetchYouTubeMetadataAction;
+use App\Dtos\YouTubeChannelData;
+use App\Dtos\YouTubeFullMetadataData;
+use App\Dtos\YouTubeVideoData;
 use App\Enums\RecipeGenerationStatus;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
 
-use function Pest\Laravel\postJson;
-use function Pest\Laravel\assertDatabaseHas;
-use function Pest\Laravel\actingAs;
+use function Pest\Laravel\{postJson, assertDatabaseHas, actingAs};
 
 describe('Video Controller: preview', function () {
     test('valid url returns video metadata successfully', function () {
@@ -136,7 +140,7 @@ describe('Video Controller: preview', function () {
                 "errors" => [
                     "video_url" => [
                         "video urlは、有効なURL形式で指定してください。",
-                        "video urlには、正しい形式を指定してください。"
+                        "YouTubeのURLを入力してください。"
                     ]
                 ]
             ]);
@@ -323,5 +327,58 @@ describe('Video Controller: store', function () {
             ->assertJson([
                 'message' => 'Unauthenticated.',
             ]);
+    });
+
+    test('異常：1分間に同じユーザーから一定回数以上のアクセスで429エラーを返す', function () {
+        Queue::fake();
+
+        $videoData = new YouTubeVideoData(
+            videoId: 'dQw4w9WgXcQ',
+            title: 'Delicious Curry',
+            channelName: 'Chef Ryuji',
+            channelId: 'UC12345',
+            categoryId: '10',
+            description: 'This is a description.',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            publishedAt: '2023-01-01T12:00:00Z',
+            durationSeconds: 930,
+            viewCount: 1000,
+            likeCount: 100,
+            commentCount: 10,
+            topicCategories: [],
+        );
+
+        $channelData = new YouTubeChannelData();
+
+        /** @var TestCase $this */
+        $this->mock(FetchYouTubeMetadataAction::class)
+            ->shouldReceive('execute')
+            ->andReturn($videoData);
+
+        $this->mock(FetchChannelInfoAction::class)
+            ->shouldReceive('execute')
+            ->andReturn($channelData);
+
+        $this->mock(FetchYouTubeMetadataAction::class)
+            ->shouldReceive('execute')
+            ->andReturn(new YouTubeFullMetadataData(
+                $videoData,
+                $channelData
+            ));
+
+        $user = \App\Models\User::factory()->create();
+        RateLimiter::clear('throttle:youtube-api');
+
+        // 2. 高速ループ
+        for ($i = 0; $i < 3; $i++) {
+            actingAs($user)->postJson('/api/videos', [
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+            ]);
+        }
+
+        // 4回目
+        actingAs($user)->postJson('/api/videos', [
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        ])->assertStatus(429);
     });
 });
