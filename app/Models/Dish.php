@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Recipe> $recipes
  * @property-read int|null $recipes_count
+ * @method static \Database\Factories\DishFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish query()
@@ -26,7 +27,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereParentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dish whereUpdatedAt($value)
- * @method static \Database\Factories\DishFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Dish extends Model
