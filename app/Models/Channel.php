@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Video> $videos
  * @property-read int|null $videos_count
+ * @method static \Database\Factories\ChannelFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel query()
@@ -34,7 +35,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereVideoCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Channel whereViewCount($value)
- * @method static \Database\Factories\ChannelFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Channel extends Model

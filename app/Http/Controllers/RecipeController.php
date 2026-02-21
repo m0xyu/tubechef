@@ -41,7 +41,7 @@ class RecipeController extends Controller
         $cacheKey = "recipe_show_{$recipe->slug}";
 
         $data = Cache::remember($cacheKey, now()->addDay(), function () use ($recipe) {
-            return $recipe->load(['video.channel', 'dish', 'ingredients', 'steps', 'tips']);
+            return $recipe->load(['video.channel', 'dish', 'ingredients', 'steps.tips', 'tips']);
         });
 
         return new RecipeResource($data);

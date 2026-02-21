@@ -67,7 +67,7 @@ class VideoPreviewResource extends JsonResource
 
     /**
      * フロントエンドが表示すべきボタンの種類を判定する
-     * @return string view_recipe,generate,limit_exceededのいずれか
+     * @return string view_recipe,retry,generate,limit_exceededのいずれか
      */
     private function determineActionType(): string
     {

@@ -26,11 +26,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $duration 動画の長さ（秒）
  * @property RecipeGenerationStatus $recipe_generation_status
  * @property string|null $recipe_generation_error_message
+ * @property int $generation_retry_count
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Channel $channel
  * @property-read \App\Models\Recipe|null $recipe
  * @property-read mixed $url
+ * @method static \Database\Factories\VideoFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video query()
@@ -41,6 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereDuration($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereFetchedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereGenerationRetryCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereLikeCount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video wherePublishedAt($value)
@@ -52,7 +55,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereVideoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Video whereViewCount($value)
- * @method static \Database\Factories\VideoFactory factory($count = null, $state = [])
  * @mixin \Eloquent
  */
 class Video extends Model
