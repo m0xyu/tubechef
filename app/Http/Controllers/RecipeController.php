@@ -10,6 +10,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 
+use function Laravel\Prompts\select;
+
 class RecipeController extends Controller
 {
     /**
@@ -23,7 +25,19 @@ class RecipeController extends Controller
         $cacheKey = "recipes_index_page_{$page}";
 
         $recipes = Cache::tags(['recipes'])->remember($cacheKey, now()->addMinutes(10), function () {
-            return Recipe::with(['video.channel', 'dish'])
+            return Recipe::select([
+                'id',
+                'title',
+                'slug',
+                'cooking_time',
+                'video_id',
+                'dish_id',
+                'created_at',
+            ])->with([
+                'video:id,channel_id,thumbnail_url',
+                'video.channel:id,name',
+                'dish:id,name',
+            ])
                 ->latest()
                 ->paginate(20);
         });
@@ -33,15 +47,23 @@ class RecipeController extends Controller
 
     /**
      * レシピ詳細を取得
-     * @param Recipe $recipe
+     * @param string $slug
      * @return RecipeResource
      */
-    public function show(Recipe $recipe): RecipeResource
+    public function show(string $slug): RecipeResource
     {
-        $cacheKey = "recipe_show_{$recipe->slug}";
+        $cacheKey = "recipe_show_{$slug}";
 
-        $data = Cache::remember($cacheKey, now()->addDay(), function () use ($recipe) {
-            return $recipe->load(['video.channel', 'dish', 'ingredients', 'steps.tips', 'tips']);
+        $data = Cache::remember($cacheKey, now()->addDay(), function () use ($slug) {
+            return Recipe::with([
+                    'video.channel', 
+                    'dish', 
+                    'ingredients', 
+                    'steps.tips', 
+                    'tips'
+                ])
+                ->where('slug', $slug)
+                ->firstOrFail();
         });
 
         return new RecipeResource($data);
