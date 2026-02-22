@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string $video_id
  * @property string $title
  * @property string $video_url
- * @property string $description
  * @property string $thumbnail_url
  * @property int|null $duration
  * @property string $published_at
@@ -43,7 +42,6 @@ class VideoPreviewResource extends JsonResource
             'video_id' => $this->video_id,
             'video_url' => $this->url,
             'title' => $this->title,
-            'description' => $this->description,
             'thumbnail_url' => $this->thumbnail_url,
             'duration' => $this->duration,
             'published_at' => $this->published_at,
@@ -52,11 +50,6 @@ class VideoPreviewResource extends JsonResource
                 'id' => $channelId,
             ],
             'action_type' => $this->determineActionType(),
-            'stats' => [
-                'is_registered' => $this->exists,
-                'is_retryable' => $this->is_retryable,
-                'retry_count' => $this->generation_retry_count ?? 0,
-            ],
             'recipe_generation_status' => $this->recipe_generation_status ?? null,
             'recipe_generation_error_message' => $this->recipe_generation_error_message,
             'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
