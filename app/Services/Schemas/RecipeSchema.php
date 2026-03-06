@@ -4,9 +4,8 @@ namespace App\Services\Schemas;
 
 final class RecipeSchema
 {
-
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     public static function get(): array
     {
@@ -26,13 +25,14 @@ final class RecipeSchema
                     'description' => 'レシピの魅力や要約（100文字程度）',
                 ],
                 'serving_size' => [
-                    'type' => ['string', 'null'],
+                    'type' => 'string', // 配列形式 ["string", "null"] を回避
+                    'nullable' => true,  // nullable キーで対応
                     'description' => '分量（例: 2人前）。不明な場合はnull',
                 ],
                 'cooking_time' => [
-                    'type' => ['string', 'null'],
-                    'description' => '調理時間（例: 15分）。不明な場合はnull',
+                    'type' => 'string',
                     'nullable' => true,
+                    'description' => '調理時間（例: 15分）。不明な場合はnull',
                 ],
                 'ingredients' => [
                     'type' => 'array',
@@ -40,19 +40,24 @@ final class RecipeSchema
                         'type' => 'object',
                         'properties' => [
                             'name' => ['type' => 'string', 'description' => '材料名'],
-                            'quantity' => ['type' => ['string', 'null'], 'description' => '分量'],
+                            'quantity' => [
+                                'type' => 'string',
+                                'nullable' => true,
+                                'description' => '分量'
+                            ],
                             'group' => [
-                                'type' => ['string', 'null'],
+                                'type' => 'string',
+                                'nullable' => true,
                                 'description' => '材料のグループ（例: 具材, 調味料, トッピング）。分類不可ならnull',
                             ],
                             'order' => ['type' => 'integer', 'description' => '表示順'],
                         ],
-                        'required' => ['name'],
+                        'required' => ['name', 'order'], // orderも必須に含めるのが安全
                     ],
                 ],
                 'dish_name' => [
                     'type' => 'string',
-                    'description' => '料理の名前だけ。動画タイトルや概要欄から抽出。タイトルと異なる場合もある。シンプルで一般的な名前にして。',
+                    'description' => '料理の名前だけ。シンプルで一般的な名前にして。',
                 ],
                 'dish_slug' => [
                     'type' => 'string',
@@ -69,7 +74,8 @@ final class RecipeSchema
                                 'description' => '手順の開始時間（秒）',
                             ],
                             'end_time_in_seconds' => [
-                                'type' => ['integer', 'null'],
+                                'type' => 'integer',
+                                'nullable' => true, // 配列形式を修正
                                 'description' => '手順の終了時間（秒）。不明な場合はnull',
                             ],
                             'description' => ['type' => 'string', 'description' => '手順の説明'],
@@ -83,10 +89,14 @@ final class RecipeSchema
                         'type' => 'object',
                         'properties' => [
                             'description' => ['type' => 'string', 'description' => '特に大事なコツやポイントを最大5つまで'],
-                            'related_step_number' => ['type' => ['integer', 'null']],
+                            'related_step_number' => [
+                                'type' => 'integer',
+                                'nullable' => true
+                            ],
                             'start_time_in_seconds' => [
-                                'type' => ['integer', 'null'],
-                                'description' => 'コツが紹介される開始時間（秒）特に重要なコツを最大3つまで。不明な場合はnull',
+                                'type' => 'integer',
+                                'nullable' => true,
+                                'description' => 'コツが紹介される開始時間。不明な場合はnull',
                             ],
                         ],
                         'required' => ['description'],
