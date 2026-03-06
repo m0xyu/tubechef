@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Recipe $recipe
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RecipeTip> $tips
+ * @property-read int|null $tips_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RecipeStep newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RecipeStep newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RecipeStep query()
@@ -44,5 +47,15 @@ class RecipeStep extends Model
     public function recipe(): BelongsTo
     {
         return $this->belongsTo(Recipe::class);
+    }
+
+    /**
+     * コツ・ポイント情報とのリレーション
+     *
+     * @return HasMany<RecipeTip, $this>
+     */
+    public function tips(): HasMany
+    {
+        return $this->hasMany(RecipeTip::class);
     }
 }

@@ -57,7 +57,6 @@ describe('Video Controller: preview', function () {
                 'data' => [
                     'video_id',
                     'title',
-                    'description',
                     'thumbnail_url',
                     'published_at',
                     'duration',
@@ -198,7 +197,6 @@ describe('Video Controller: store', function () {
                     'kind' => 'youtube#channel',
                     'snippet' => [
                         'title' => 'Chef Ryuji',
-                        'description' => 'Channel Description',
                         'customUrl' => '@ryuji',
                         'thumbnails' => ['high' => ['url' => 'http://img.com/c.jpg']],
                     ],
@@ -231,7 +229,6 @@ describe('Video Controller: store', function () {
                 'data' => [
                     'video_id',
                     'title',
-                    'description',
                     'thumbnail_url',
                     'published_at',
                     'duration',

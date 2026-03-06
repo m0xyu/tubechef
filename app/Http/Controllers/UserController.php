@@ -19,7 +19,23 @@ class UserController extends Controller
     {
         /** @var \App\Models\User */
         $user = Auth::user();
-        $videos = $user->historyVideos()->with('channel', 'recipe')->get();
+        $videos = $user->historyVideos()
+            ->select(
+                'videos.id',
+                'videos.video_id',
+                'videos.channel_id',
+                'videos.title',
+                'videos.thumbnail_url',
+                'videos.duration',
+                'videos.published_at',
+                'videos.recipe_generation_status',
+                'videos.recipe_generation_error_message',
+                'videos.generation_retry_count'
+            )
+            ->with(
+                'channel:id,name',
+                'recipe:id,video_id,slug'
+            )->paginate(20);
         return VideoPreviewResource::collection($videos);
     }
 

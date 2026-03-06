@@ -2,15 +2,16 @@
 
 namespace App\Exceptions;
 
-use App\Enums\Errors\VideoError;
+use App\Enums\Errors\GeminiError;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
-class VideoException extends BaseException
+class GeminiException extends BaseException
 {
     public function __construct(
-        public readonly VideoError $error,
+        protected readonly GeminiError $error,
         ?string $logMessage = null,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         parent::__construct(
             $logMessage ?? $error->message(),
@@ -23,10 +24,11 @@ class VideoException extends BaseException
 
     /**
      * エラーコードを Enum の値から動的に生成
+     * 例: 'gemini_invalid_argument'
      */
     public function getErrorCode(): string
     {
-        return 'recipe_' . $this->error->value;
+        return 'gemini_' . $this->error->value;
     }
 
     /**
@@ -40,7 +42,7 @@ class VideoException extends BaseException
     /**
      * Enumを取得するためのヘルパー
      */
-    public function getErrorEnum(): VideoError
+    public function getErrorEnum(): GeminiError
     {
         return $this->error;
     }

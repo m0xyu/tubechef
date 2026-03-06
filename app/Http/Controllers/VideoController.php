@@ -67,7 +67,10 @@ class VideoController extends Controller
 
             // 2. すでに成功しているか、処理中の場合 → そのまま返す
             if ($existingVideo->isGenerationProcessingOrCompleted()) {
-                return new VideoPreviewResource($existingVideo->load('channel', 'recipe'));
+                return new VideoPreviewResource($existingVideo->load([
+                    'channel:id,name',
+                    'recipe:id,video_id,slug'
+                ]));
             }
         }
 
@@ -93,7 +96,10 @@ class VideoController extends Controller
             return $video;
         });
 
-        return (new VideoPreviewResource($video->load('channel', 'recipe')))->additional(['success' => true]);
+        return (new VideoPreviewResource($video->load(
+            'channel:id,name',
+            'recipe:id,video_id,slug'
+        )))->additional(['success' => true]);
     }
 
     /**

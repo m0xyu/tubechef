@@ -1,59 +1,180 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍳 TubeChef (チューブシェフ)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**動画の「おいしそう」を、文字の「見やすさ」に。**
 
-## About Laravel
+🌍 **アプリURL**: [https://app.cosmethod.com](https://app.cosmethod.com)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**フロントエンド**: [https://github.com/m0xyu/tubechef-frontend](https://github.com/m0xyu/tubechef-frontend)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+動画を何度も止めたり、巻き戻したりする必要はありません。
+TubeChefは、YouTubeの料理動画URLを入力するだけで、AIが動画から「材料」と「手順」を自動で書き起こすWebアプリケーションです。
+動画を見る時間を最小限にショートカットし、あなたの料理体験をもっとスムーズにします。
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+| Category           | Technology                                              |
+| :----------------- | :------------------------------------------------------ |
+| **Frontend**       | React, TanStack Router, Tailwind CSS, Vite              |
+| **Backend**        | Laravel 11, PHP 8.4, Laravel Sanctum (SPA Auth)         |
+| **Infrastructure** | Docker, MySQL 8.0, Redis, Cloudflare (DNS / Pages), VPS |
+| **Testing**        | PHPUnit, Pest                                           |
+| **AI / API**       | YouTube Data API v3, Gemini API                         |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🏗️ Architecture & Design
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+「保守性・拡張性・テスト容易性」を重視したモダンなバックエンド設計を取り入れています。
 
-### Premium Partners
+- **Fat Controllerの排除 (Action & DTO)**
+  複雑なビジネスロジックは単一責任の `Action` クラスに分離し、データのやり取りには配列ではなく型安全な **DTO (Data Transfer Object)** を採用しています。
+- **LLM連携の抽象化 (Factory Pattern)**
+  特定のAIモデルに依存しないよう、`LLMServiceInterface` と Factory パターンを用いて実装。将来的なモデル変更（OpenAI等）にも設定のみで対応可能な「オープン・クローズドの原則」に準拠しています。
+- **堅牢なエラーハンドリング**
+  PHP 8.1の Enum と独自例外クラスを組み合わせ、マジックナンバーを排除した厳密なステータス管理を行っています。
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 🔥 Technical Highlights
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+バックエンドのパフォーマンスと拡張性を意識し、以下の設計・実装を行っています。
 
-## Code of Conduct
+### 非同期処理によるUX向上とスケーラビリティ
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+LLM（Gemini）によるレシピ生成処理は数秒〜十数秒の待機時間が発生するため、同期処理ではUXを著しく損なう懸念がありました。
+これを解決するため、**Redis + Laravel Worker** を用いた非同期処理（Job）アーキテクチャを導入。即時にレスポンスを返しつつ、裏側で安全にタスクを処理するスケーラブルな構成を実現しています。
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🗄️ データベース設計（ER図）
 
-## License
+本プロジェクトでは、データの整合性とクエリパフォーマンスを両立させるため、適切な正規化とインデックス設計を行っています。YouTubeからのメタデータ（`videos`）と、AIによって生成された構造化データ（`recipes`）を分離し、拡張性の高い構造にしています。
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### ER図
+
+```mermaid
+erDiagram
+    users ||--o{ video_user : "動画の要約をリクエストしたユーザー"
+    videos ||--o{ video_user : ""
+    channels ||--o{ videos : "Youtubeチャンネル"
+    videos ||--o| recipes : "動画のSource"
+    dishes ||--o{ recipes : "動画の料理名(カテゴリ)"
+    recipes ||--o{ recipe_ingredients : "材料"
+    recipes ||--o{ recipe_steps : "手順"
+    recipes ||--o{ recipe_tips : "コツ"
+    recipe_steps ||--o{ recipe_tips : "手順に関連するコツ"
+
+    users {
+        bigint id PK
+        string name
+        string email "UK"
+        timestamp email_verified_at
+        string password
+    }
+
+    channels {
+        bigint id PK
+        string channel_id "UK: YouTube ID"
+        string name
+        text description
+        string thumbnail_url
+        string custom_url
+        bigint view_count
+        bigint video_count
+        bigint subscriber_count
+    }
+
+    videos {
+        bigint id PK
+        string video_id "UK: YouTube ID"
+        bigint channel_id FK
+        string title
+        text description
+        string thumbnail_url
+        bigint view_count "Indexed"
+        json topic_categories
+        int duration "Seconds"
+        string recipe_generation_status "pending/processing/etc"
+        text recipe_generation_error_message
+        int generation_retry_count
+    }
+
+    video_user {
+        bigint user_id FK
+        bigint video_id FK
+    }
+
+    dishes {
+        bigint id PK
+        bigint parent_id FK "Self-reference (Parent Category)"
+        string name
+        string slug "UK"
+        text description
+    }
+
+    recipes {
+        bigint id PK
+        bigint video_id FK "UK"
+        bigint dish_id FK
+        string slug
+        string title
+        text summary
+        string serving_size
+        int cooking_time "Minutes"
+    }
+
+    recipe_ingredients {
+        bigint id PK
+        bigint recipe_id FK
+        string group "調味料、食材、その他"
+        string name
+        string quantity
+        smallint order "Sort Order"
+    }
+
+    recipe_steps {
+        bigint id PK
+        bigint recipe_id FK
+        smallint step_number
+        text description
+        int start_time_in_seconds "Video timestamp (start)"
+        int end_time_in_seconds "Video timestamp (end)"
+    }
+
+    recipe_tips {
+        bigint id PK
+        bigint recipe_id FK
+        bigint recipe_step_id FK "Optional"
+        text description
+        int start_time_in_seconds
+    }
+```
+
+## 💻 Local Setup
+
+Docker (Laravel Sail ベース) を使用して簡単に立ち上げ可能です。
+
+```
+git clone [https://github.com/yourusername/tubechef.git](https://github.com/yourusername/tubechef.git)
+cd tubechef
+cp .env.example .env
+
+# Composer 依存関係のインストール (ローカルに PHP がない場合、Sail の一時コンテナを利用)
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php84-composer:latest \
+    composer install --ignore-platform-reqs
+
+# コンテナのビルドと起動（バックグラウンド）
+./vendor/bin/sail up -d
+
+# アプリケーションキーの生成
+./vendor/bin/sail artisan key:generate
+
+# データベースのマイグレーション
+./vendor/bin/sail artisan migrate
+```
