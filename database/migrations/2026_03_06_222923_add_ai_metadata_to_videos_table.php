@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('video', function (Blueprint $table) {
+        Schema::table('videos', function (Blueprint $table) {
             $table->json('ai_metadata')->nullable();
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('video', function (Blueprint $table) {
+        Schema::table('videos', function (Blueprint $table) {
             $table->dropColumn('ai_metadata');
         });
     }
