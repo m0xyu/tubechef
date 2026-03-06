@@ -7,6 +7,14 @@ namespace App\ValueObjects;
  */
 class GeminiResponseCandidate
 {
+    /**
+     * @param array<string, mixed> $content
+     * @param string $finishReason
+     * @param GeminiUsageMetadata $usage
+     * @param string $modelVersion
+     * @param  array<mixed> $safetyRatings
+     * @param string|null $finishMessage
+     */
     public function __construct(
         public readonly array $content,
         public readonly string $finishReason,
@@ -16,6 +24,12 @@ class GeminiResponseCandidate
         public readonly ?string $finishMessage = null,
     ) {}
 
+    /**
+     * @param array<string, mixed> $candidate
+     * @param GeminiUsageMetadata $usage
+     * @param string $modelVersion
+     * @return self
+     */
     public static function fromResponse(array $candidate, GeminiUsageMetadata $usage, string $modelVersion): self
     {
         return new self(
@@ -30,6 +44,7 @@ class GeminiResponseCandidate
 
     /**
      * 正常に終了したか判定
+     * @return bool
      */
     public function isSuccessful(): bool
     {
@@ -38,6 +53,7 @@ class GeminiResponseCandidate
 
     /**
      * DB保存用（ai_metadataカラム用）の配列に変換
+     * @return array<string, mixed>
      */
     public function toMetadataArray(): array
     {
@@ -51,6 +67,9 @@ class GeminiResponseCandidate
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getFailureContext(): array
     {
         return array_merge($this->toMetadataArray(), [

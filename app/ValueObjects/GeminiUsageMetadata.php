@@ -2,8 +2,23 @@
 
 namespace App\ValueObjects;
 
+/**
+ * Geminiのトークン使用量とモダリティ別の詳細を管理するクラス
+ */
 class GeminiUsageMetadata
 {
+    /**
+     * @param int $promptTokenCount
+     * @param int $candidatesTokenCount
+     * @param int $totalTokenCount
+     * @param int $cachedContentTokenCount
+     * @param int $toolUsePromptTokenCount
+     * @param int $thoughtsTokenCount
+     * @param array<int, array<string, mixed>> $promptDetails
+     * @param array<int, array<string, mixed>> $cacheDetails
+     * @param array<int, array<string, mixed>> $candidatesDetails
+     * @param array<int, array<string, mixed>> $toolUseDetails
+     */
     public function __construct(
         public readonly int $promptTokenCount,
         public readonly int $candidatesTokenCount,
@@ -17,6 +32,10 @@ class GeminiUsageMetadata
         public readonly array $toolUseDetails = [],
     ) {}
 
+    /**
+     * @param array<string, mixed> $data
+     * @return self
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -33,11 +52,22 @@ class GeminiUsageMetadata
         );
     }
 
+    /**
+     * 指定されたモダリティ（TEXT, VIDEO等）のトークン数を取得
+     * @param array<int, array<string, mixed>> $details
+     * @param string $modality
+     * @return int
+     */
     public function getModalityCount(array $details, string $modality): int
     {
+        // $details は [['modality' => 'TEXT', 'tokenCount' => 100], ...] という構造
         return collect($details)->firstWhere('modality', strtoupper($modality))['tokenCount'] ?? 0;
     }
 
+    /**
+     * DB保存用またはAPIレスポンス用の配列に変換
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [
@@ -52,6 +82,12 @@ class GeminiUsageMetadata
         ];
     }
 
+    /**
+     * フェーズごとの詳細を整形
+     * @param int $total
+     * @param array<int, array<string, mixed>> $details
+     * @return array<string, int>
+     */
     private function formatPhase(int $total, array $details): array
     {
         return [

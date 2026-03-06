@@ -12,6 +12,7 @@ abstract class BaseException extends RuntimeException
 {
     protected int $statusCode = 500;
     protected string $userMessage;
+    /** @var array<string, mixed> */
     protected array $details = [];
     protected bool $shouldReport = true;
 
@@ -34,11 +35,13 @@ abstract class BaseException extends RuntimeException
 
     /**
      * この例外固有のエラーコードを返す (例: 'inventory_shortage')
+     * @return string
      */
     abstract public function getErrorCode(): string;
 
     /**
      * デフォルトのユーザー向けメッセージ
+     *  @return string
      */
     abstract protected function getDefaultUserMessage(): string;
 
@@ -48,6 +51,9 @@ abstract class BaseException extends RuntimeException
         return $this;
     }
 
+    /**
+     * @param array<string, mixed> $details
+     */
     public function withDetails(array $details): static
     {
         $this->details = $details;
@@ -60,16 +66,21 @@ abstract class BaseException extends RuntimeException
         return $this;
     }
 
+    /** @return int */
     public function getStatusCode(): int
     {
         return $this->statusCode;
     }
 
+    /** @return string */
     public function getUserMessage(): string
     {
         return $this->userMessage;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getDetails(): array
     {
         return $this->details;

@@ -23,6 +23,7 @@ class GeminiGenerateResultData
 
     /**
      * テキストをJSONとしてパースして取得する
+     * @return array<mixed>
      */
     public function getData(): array
     {
@@ -48,6 +49,7 @@ class GeminiGenerateResultData
 
     /**
      * 保存用のメタデータを取得
+     * @return array<mixed>
      */
     public function getMetadata(): array
     {
