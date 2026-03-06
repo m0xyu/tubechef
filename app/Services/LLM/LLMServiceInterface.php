@@ -2,6 +2,7 @@
 
 namespace App\Services\LLM;
 
+use App\Dtos\GeminiGenerateResultData;
 use App\Dtos\GeneratedRecipeData;
 
 interface LLMServiceInterface
@@ -15,4 +16,15 @@ interface LLMServiceInterface
      * @return GeneratedRecipeData 生成されたレシピデータ
      */
     public function generateRecipe(string $title, string $description, string $videoUrl): GeneratedRecipeData;
+
+    /**
+     * スキーマに基づいた構造化データを生成する
+     *
+     * @param string $prompt
+     * @param string $schema
+     * @param string $systemInstruction
+     * @param string $videoUrl
+     * @return GeminiGenerateResultData
+     */
+    public function generateStructured(string $prompt, array $schema, string $systemInstruction, string $videoUrl): GeminiGenerateResultData;
 }

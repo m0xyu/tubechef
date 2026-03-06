@@ -3,18 +3,46 @@
 namespace App\Exceptions;
 
 use App\Enums\Errors\RecipeError;
-use Exception;
 use Illuminate\Http\JsonResponse;
 
-class RecipeException extends Exception
+class RecipeException extends BaseException
 {
     public function __construct(
         public readonly RecipeError $error,
-        string $message = '',
-        public readonly int $statusCode = 400,
+        ?string $logMessage = null,
         ?\Throwable $previous = null
     ) {
-        parent::__construct($message ?: $error->message(), 0, $previous);
+        parent::__construct(
+            $logMessage ?? $error->message(),
+            $error->message(),
+            $previous
+        );
+
+        $this->withStatus($error->status());
+    }
+
+    /**
+     * エラーコードを Enum の値から動的に生成
+     */
+    public function getErrorCode(): string
+    {
+        return 'recipe_' . $this->error->value;
+    }
+
+    /**
+     * Enumからデフォルトのユーザーメッセージを取得
+     */
+    protected function getDefaultUserMessage(): string
+    {
+        return $this->error->message();
+    }
+
+    /**
+     * Enumを取得するためのヘルパー
+     */
+    public function getErrorEnum(): RecipeError
+    {
+        return $this->error;
     }
 
     /**
@@ -25,7 +53,7 @@ class RecipeException extends Exception
         return response()->json([
             'success' => false,
             'error_code' => $this->error->value,
-            'message' => $this->getMessage(),
+            'message' => $this->getDefaultUserMessage(),
         ], $this->statusCode);
     }
 }
