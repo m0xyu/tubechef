@@ -46,5 +46,9 @@ return [
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'retry_count' => env('GEMINI_RETRY_COUNT', 2),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'),
+        'pro_model' => env('GEMINI_PRO_MODEL', 'gemini-2.5-pro'),
+        'flash_model' => env('GEMINI_FLASH_MODEL', 'gemini-2.5-flash'),
+        'lite_model' => env('GEMINI_LITE_MODEL', 'gemini-2.5-flash_lite')
     ],
 ];

@@ -79,6 +79,7 @@ class Video extends Model
         'recipe_generation_status',
         'recipe_generation_error_message',
         'generation_retry_count',
+        'ai_metadata'
     ];
 
     protected $casts = [
@@ -86,6 +87,7 @@ class Video extends Model
         'published_at' => 'datetime',
         'fetched_at' => 'datetime',
         'recipe_generation_status' => RecipeGenerationStatus::class,
+        'ai_metadata' => 'array'
     ];
 
     /**
