@@ -6,6 +6,7 @@ use App\Dtos\GeneratedRecipeData;
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Services\LLM\LLMServiceInterface;
+use App\Services\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Http;
@@ -35,95 +36,7 @@ class GeminiService implements LLMServiceInterface
      */
     public function generateRecipe(string $title, string $description, string $videoUrl): GeneratedRecipeData
     {
-        $recipeSchema = [
-            'type' => 'OBJECT',
-            'properties' => [
-                'is_recipe' => [
-                    'type' => 'BOOLEAN',
-                    'description' => '動画の内容が料理レシピであるかどうか',
-                ],
-                'title' => [
-                    'type' => 'STRING',
-                    'description' => '料理名。動画タイトルから抽出',
-                ],
-                'summary' => [
-                    'type' => 'STRING',
-                    'description' => 'レシピの魅力や要約（100文字程度）',
-                ],
-                'serving_size' => [
-                    'type' => 'STRING',
-                    'description' => '分量（例: 2人前）。不明な場合はnull',
-                    'nullable' => true,
-                ],
-                'cooking_time' => [
-                    'type' => 'STRING',
-                    'description' => '調理時間（例: 15分）。不明な場合はnull',
-                    'nullable' => true,
-                ],
-                'ingredients' => [
-                    'type' => 'ARRAY',
-                    'items' => [
-                        'type' => 'OBJECT',
-                        'properties' => [
-                            'name' => ['type' => 'STRING', 'description' => '材料名'],
-                            'quantity' => ['type' => 'STRING', 'description' => '分量', 'nullable' => true],
-                            'group' => [
-                                'type' => 'STRING',
-                                'description' => '材料のグループ（例: 具材, 調味料, トッピング）。分類不可ならnull',
-                                'nullable' => true,
-                            ],
-                            'order' => ['type' => 'INTEGER', 'description' => '表示順'],
-                        ],
-                        'required' => ['name'],
-                    ],
-                ],
-                'dish_name' => [
-                    'type' => 'STRING',
-                    'description' => '料理の名前だけ。動画タイトルや概要欄から抽出。タイトルと異なる場合もある。シンプルで一般的な名前にして。',
-                ],
-                'dish_slug' => [
-                    'type' => 'STRING',
-                    'description' => '料理名のスラッグ（英数字とハイフンのみ）',
-                ],
-                'steps' => [
-                    'type' => 'ARRAY',
-                    'items' => [
-                        'type' => 'OBJECT',
-                        'properties' => [
-                            'step_number' => ['type' => 'INTEGER'],
-                            'start_time_in_seconds' => [
-                                'type' => 'INTEGER',
-                                'description' => '手順の開始時間（秒）。不明な場合はnull',
-                            ],
-                            'end_time_in_seconds' => [
-                                'type' => 'INTEGER',
-                                'description' => '手順の終了時間（秒）。不明な場合はnull',
-                                'nullable' => true,
-                            ],
-                            'description' => ['type' => 'STRING', 'description' => '手順の説明'],
-                        ],
-                        'required' => ['step_number', 'description', 'start_time_in_seconds'],
-                    ],
-                ],
-                'tips' => [
-                    'type' => 'ARRAY',
-                    'items' => [
-                        'type' => 'OBJECT',
-                        'properties' => [
-                            'description' => ['type' => 'STRING', 'description' => '特に大事なコツやポイントを最大5つまで'],
-                            'related_step_number' => ['type' => 'INTEGER', 'nullable' => true],
-                            'start_time_in_seconds' => [
-                                'type' => 'INTEGER',
-                                'description' => 'コツが紹介される開始時間（秒）特に重要なコツを最大3つまで。不明な場合はnull',
-                                'nullable' => true,
-                            ],
-                        ],
-                        'required' => ['description'],
-                    ],
-                ],
-            ],
-            'required' => ['is_recipe', 'title', 'ingredients', 'steps', 'dish_name', 'dish_slug'],
-        ];
+        $recipeSchema = RecipeSchema::get();
 
         $systemInstruction = <<<EOT
             あなたはプロの料理研究家兼データエンジニアです。
