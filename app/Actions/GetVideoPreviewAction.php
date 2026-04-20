@@ -72,7 +72,7 @@ class GetVideoPreviewAction
     }
 
     /**
-     * 不適格ん動画でを「生成不可」として永続化する
+     * 不適格な動画を「生成不可」として永続化する
      * @param YouTubeVideoData $metadata 
      * @return Video
      */

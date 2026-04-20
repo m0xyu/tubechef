@@ -2,6 +2,7 @@
 
 namespace App\Dtos;
 
+
 final readonly class RecipeTipData
 {
     /**
