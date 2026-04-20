@@ -87,6 +87,7 @@ class GeminiService implements LLMServiceInterface
 
         $usage = GeminiUsageMetadata::fromArray($usageData);
         $candidate = GeminiResponseCandidate::fromResponse($candidateData, $usage, $modelVersion);
+        $usage = $candidate->toMetadataArray();
 
         // 1. Gemini側での生成成否チェック
         if (!$candidate->isSuccessful()) {
@@ -112,11 +113,7 @@ class GeminiService implements LLMServiceInterface
         return new LLMResponseData(
             data: $decoded ?? [],
             model: $modelVersion,
-            usage: [
-                'prompt_tokens' => $usage->promptTokenCount,
-                'completion_tokens' => $usage->candidatesTokenCount,
-                'total_tokens' => $usage->totalTokenCount,
-            ],
+            usage: $usage,
             rawContent: $text
         );
     }
