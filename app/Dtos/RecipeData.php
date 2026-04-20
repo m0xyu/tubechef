@@ -50,7 +50,6 @@ final readonly class RecipeData
 
         $steps = $recipe->relationLoaded('steps')
             ? $recipe->steps->map(fn($s) => new RecipeStepData(
-                id: $s->id,
                 stepNumber: $s->step_number,
                 description: $s->description,
                 startTimeInSeconds: $s->start_time_in_seconds,

@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property int $id
  * @property int $step_number
  * @property string $description
  * @property int|null $start_time_in_seconds
@@ -22,7 +21,6 @@ class RecipeStepResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id' => $this->id,
             'step_number' => $this->stepNumber,
             'description' => $this->description,
             'start_time_in_seconds' => $this->startTimeInSeconds,

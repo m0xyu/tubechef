@@ -3,7 +3,6 @@
 namespace App\Dtos;
 
 /**
- * @param integer $id
  * @param integer $stepNumber
  * @param string $description
  * @param integer|null $startTimeInSeconds
@@ -13,7 +12,6 @@ namespace App\Dtos;
 final readonly class RecipeStepData
 {
     public function __construct(
-        public int $id,
         public int $stepNumber,
         public string $description,
         public ?int $startTimeInSeconds = null,
