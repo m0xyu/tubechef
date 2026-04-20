@@ -10,8 +10,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 
-use function Laravel\Prompts\select;
-
 class RecipeController extends Controller
 {
     /**
@@ -56,12 +54,12 @@ class RecipeController extends Controller
 
         $data = Cache::remember($cacheKey, now()->addDay(), function () use ($slug) {
             return Recipe::with([
-                    'video.channel', 
-                    'dish', 
-                    'ingredients', 
-                    'steps.tips', 
-                    'tips'
-                ])
+                'video.channel',
+                'dish',
+                'ingredients',
+                'steps.tips',
+                'tips'
+            ])
                 ->where('slug', $slug)
                 ->firstOrFail();
         });
