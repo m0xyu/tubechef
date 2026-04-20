@@ -35,23 +35,20 @@ class VideoResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'video_id' => $this->video_id,
+            'video_id' => $this->videoId,
             'title' => $this->title,
             'description' => $this->description,
             'url' => $this->url,
-            'thumbnail_url' => $this->thumbnail_url,
+            'thumbnail_url' => $this->thumbnailUrl,
             'duration' => $this->duration,
-            'published_at' => $this->published_at,
-            'channel' => new ChannelResource($this->whenLoaded('channel')),
-            'recipe_generation_status' => $this->recipe_generation_status,
-            'recipe_generation_status_message' => $this->recipe_generation_status_message,
-            'view_count' => $this->view_count,
-            'like_count' => $this->like_count,
-            'comment_count' => $this->comment_count,
-            'topic_categories' => $this->topic_categories,
-            'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
-                ? $this->recipe->slug
-                : null,
+            'published_at' => $this->publishedAt,
+            'channel' => new ChannelResource($this->channel),
+            'recipe_generation_status' => $this->recipeGenerationStatus,
+            'recipe_generation_status_message' => $this->recipeGenerationStatusMessage,
+            'view_count' => $this->viewCount,
+            'like_count' => $this->likeCount,
+            'comment_count' => $this->commentCount,
+            'topic_categories' => $this->topicCategories,
         ];
     }
 }

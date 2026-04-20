@@ -25,13 +25,15 @@ class RecipeListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'slug' => $this->slug,
-            'thumbnail_url' => $this->video?->thumbnail_url,
-            'cooking_time' => $this->cooking_time,
-            'channel_name' => $this->video?->channel?->name,
-            'dish' => new DishResource($this->whenLoaded('dish')),
+            'id'            => $this->id,
+            'title'         => $this->title,
+            'slug'          => $this->slug,
+            'thumbnail_url' => $this->thumbnailUrl,
+            'cooking_time'  => $this->cookingTime,
+            'channel_name'  => $this->channelName,
+            'dish' => [
+                'name' => $this->dishName,
+            ],
         ];
     }
 }

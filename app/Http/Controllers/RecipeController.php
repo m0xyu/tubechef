@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RecipeListResource;
 use App\Http\Resources\RecipeResource;
-use App\Models\Recipe;
+use App\Repositories\Contracts\RecipeRepositoryInterface;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RecipeController extends Controller
 {
+    public function __construct(
+        private readonly RecipeRepositoryInterface $recipeRepository
+    ) {}
+
     /**
      * レシピ一覧を取得
      * @param Request $request
@@ -19,26 +23,9 @@ class RecipeController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $page = $request->get('page', 1);
-        $cacheKey = "recipes_index_page_{$page}";
+        $page = (int) $request->get('page', 1);
 
-        $recipes = Cache::tags(['recipes'])->remember($cacheKey, now()->addMinutes(10), function () {
-            return Recipe::select([
-                'id',
-                'title',
-                'slug',
-                'cooking_time',
-                'video_id',
-                'dish_id',
-                'created_at',
-            ])->with([
-                'video:id,channel_id,thumbnail_url',
-                'video.channel:id,name',
-                'dish:id,name',
-            ])
-                ->latest()
-                ->paginate(20);
-        });
+        $recipes = $this->recipeRepository->paginateForList($page);
 
         return RecipeListResource::collection($recipes);
     }
@@ -50,19 +37,8 @@ class RecipeController extends Controller
      */
     public function show(string $slug): RecipeResource
     {
-        $cacheKey = "recipe_show_{$slug}";
-
-        $data = Cache::remember($cacheKey, now()->addDay(), function () use ($slug) {
-            return Recipe::with([
-                'video.channel',
-                'dish',
-                'ingredients',
-                'steps.tips',
-                'tips'
-            ])
-                ->where('slug', $slug)
-                ->firstOrFail();
-        });
+        $data = $this->recipeRepository->findBySlugOrFail($slug);
+        Log::info('Recipe data retrieved', ['slug' => $slug, 'data' => $data]);
 
         return new RecipeResource($data);
     }

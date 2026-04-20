@@ -12,6 +12,7 @@ use App\Models\Video;
  * @param integer $channelId
  * @param ChannelData|null $channel
  * @param string $videoId
+ * @param string $url
  * @param string $title
  * @param string|null $description
  * @param string|null $thumbnailUrl
@@ -37,6 +38,7 @@ final readonly class VideoData
         public int $id,
         public int $channelId,
         public ?ChannelData $channel = null,
+        public string $url,
         public string $videoId,
         public string $title,
         public ?string $description,
@@ -71,6 +73,7 @@ final readonly class VideoData
             id: $video->id,
             channelId: $video->channel_id,
             channel: $channel,
+            url: $video->url,
             videoId: $video->video_id,
             title: $video->title,
             description: $video->description,

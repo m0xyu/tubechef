@@ -20,8 +20,8 @@ class RecipeTipResource extends JsonResource
     {
         return [
             'description' => $this->description,
-            'related_step' => $this->recipe_step_id,
-            'start_time_in_seconds' => $this->start_time_in_seconds,
+            'related_step' => $this->relatedStepNumber,
+            'start_time_in_seconds' => $this->startTimeInSeconds,
         ];
     }
 }

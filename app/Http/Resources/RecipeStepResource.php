@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string $description
  * @property int|null $start_time_in_seconds
  * @property int|null $end_time_in_seconds
- * 
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeTip[] $tips
  */
 class RecipeStepResource extends JsonResource
 {
@@ -23,11 +23,11 @@ class RecipeStepResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'step_number' => $this->step_number,
+            'step_number' => $this->stepNumber,
             'description' => $this->description,
-            'start_time_in_seconds' => $this->start_time_in_seconds,
-            'end_time_in_seconds' => $this->end_time_in_seconds,
-            'tips' => RecipeTipResource::collection($this->whenLoaded('tips'))
+            'start_time_in_seconds' => $this->startTimeInSeconds,
+            'end_time_in_seconds' => $this->endTimeInSeconds,
+            'tips' => RecipeTipResource::collection($this->tips),
         ];
     }
 }

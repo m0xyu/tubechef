@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repositories\Contracts\RecipeRepositoryInterface;
+use App\Repositories\RecipeRepository;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -14,7 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // インターフェースと実装のバインディング
+        $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
     }
 
     /**
