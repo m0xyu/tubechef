@@ -2,7 +2,7 @@
 
 namespace App\Services\LLM;
 
-use App\Dtos\GeminiGenerateResultData;
+use App\Dtos\LLMResponseData;
 use App\Enums\Errors\GeminiError;
 use App\Exceptions\GeminiException;
 use App\Services\LLM\LLMServiceInterface;
@@ -36,14 +36,14 @@ class GeminiService implements LLMServiceInterface
      * @param array<mixed> $schema
      * @param string $systemInstruction
      * @param string $videoUrl
-     * @return GeminiGenerateResultData
+     * @return LLMResponseData
      */
     public function generateStructured(
         string $prompt,
         array $schema,
         string $systemInstruction,
         string $videoUrl
-    ): GeminiGenerateResultData {
+    ): LLMResponseData {
         try {
             $url = $this->buildUrl();
             /** @var \Illuminate\Http\Client\Response $response */
@@ -76,23 +76,49 @@ class GeminiService implements LLMServiceInterface
     }
 
     /**
-     * @param \Illuminate\Http\Client\Response $response $response
-     * @return GeminiGenerateResultData
+     * @param \Illuminate\Http\Client\Response $response
+     * @return LLMResponseData
      */
-    private function processResponse($response): GeminiGenerateResultData
+    private function processResponse($response): LLMResponseData
     {
         $candidateData = $response->json('candidates.0') ?? [];
         $usageData = $response->json('usageMetadata') ?? [];
         $modelVersion = $response->json('modelVersion') ?? 'unknown';
+
         $usage = GeminiUsageMetadata::fromArray($usageData);
         $candidate = GeminiResponseCandidate::fromResponse($candidateData, $usage, $modelVersion);
 
+        // 1. Gemini側での生成成否チェック
         if (!$candidate->isSuccessful()) {
             Log::warning("Gemini generation stopped: {$candidate->finishReason}", $candidate->getFailureContext());
             throw new GeminiException(GeminiError::INTERNAL_ERROR);
         }
 
-        return new GeminiGenerateResultData($candidate);
+        // 2. テキストの抽出
+        $text = $candidate->content['parts'][0]['text'] ?? '';
+
+        // 3. JSONパースとエラーハンドリング
+        $decoded = json_decode($text, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("Gemini JSON Parse Error", [
+                'error' => json_last_error_msg(),
+                'raw_text' => $text,
+                'video_url' => $response->effectiveUri(),
+            ]);
+            throw new GeminiException(GeminiError::INTERNAL_ERROR, 'AIのレスポンスが解析不可能な形式でした。');
+        }
+
+        return new LLMResponseData(
+            data: $decoded ?? [],
+            model: $modelVersion,
+            usage: [
+                'prompt_tokens' => $usage->promptTokenCount,
+                'completion_tokens' => $usage->candidatesTokenCount,
+                'total_tokens' => $usage->totalTokenCount,
+            ],
+            rawContent: $text
+        );
     }
 
     /**

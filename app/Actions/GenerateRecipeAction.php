@@ -53,8 +53,8 @@ class GenerateRecipeAction
             throw new RecipeException(RecipeError::GENERATION_FAILED, previous: $e);
         }
 
-        $recipeData = GeneratedRecipeData::fromArray($result->getData());
-        $metadata = $result->getMetadata();
+        $recipeData = GeneratedRecipeData::fromArray($result->data);
+        $metadata = $result->usage;
 
         if (!$recipeData->isRecipe) {
             $this->videoMetadataUpdateAction->execute($video, $metadata);

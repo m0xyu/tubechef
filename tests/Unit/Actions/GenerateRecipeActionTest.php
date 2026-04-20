@@ -42,9 +42,12 @@ describe('GenerateRecipeActionTest', function () {
             ]
         ];
 
-        $usage = new \App\ValueObjects\GeminiUsageMetadata(0, 0, 0);
-        $candidate = new \App\ValueObjects\GeminiResponseCandidate($wrappedContent, 'STOP', $usage, 'test-model');
-        $geminiResult = new \App\Dtos\GeminiGenerateResultData($candidate);
+        $geminiResult = new \App\Dtos\LLMResponseData(
+            data: $data,
+            model: 'test-model',
+            usage: ['prompt_tokens' => 10, 'completion_tokens' => 20], // 具体的な数値
+            rawContent: json_encode($data)
+        );
 
         $mock->shouldReceive('generateStructured')
             ->once()
@@ -91,9 +94,14 @@ describe('GenerateRecipeActionTest', function () {
             ]
         ];
 
-        $usage = new \App\ValueObjects\GeminiUsageMetadata(0, 0, 0);
-        $candidate = new \App\ValueObjects\GeminiResponseCandidate($wrappedContent, 'STOP', $usage, 'test-model');
-        $geminiResult = new \App\Dtos\GeminiGenerateResultData($candidate);
+        // $usage = new \App\ValueObjects\GeminiUsageMetadata(0, 0, 0);
+        // $candidate = new \App\ValueObjects\GeminiResponseCandidate($wrappedContent, 'STOP', $usage, 'test-model');
+        $geminiResult = new \App\Dtos\LLMResponseData(
+            data: $data,
+            model: 'test-model',
+            usage: ['token_count' => 10],
+            rawContent: json_encode($wrappedContent)
+        );
 
         $mock->shouldReceive('generateStructured')
             ->once()
