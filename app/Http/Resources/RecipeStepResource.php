@@ -5,10 +5,10 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property int $step_number
+ * @property int $stepNumber
  * @property string $description
- * @property int|null $start_time_in_seconds
- * @property int|null $end_time_in_seconds
+ * @property int|null $startTimeInSeconds
+ * @property int|null $endTimeInSeconds
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeTip[] $tips
  */
 class RecipeStepResource extends JsonResource

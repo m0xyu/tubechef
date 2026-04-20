@@ -11,6 +11,9 @@ namespace App\Dtos;
  */
 final readonly class RecipeStepData
 {
+    /**
+     * @param array<RecipeTipData> $tips
+     */
     public function __construct(
         public int $stepNumber,
         public string $description,

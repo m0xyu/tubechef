@@ -5,21 +5,21 @@ namespace App\Dtos;
 use App\Dtos\DishData;
 use App\Models\Recipe;
 
-/**
- * @param int $id
- * @param string $title
- * @param string $slug
- * @param string|null $summary
- * @param string|null $servingSize
- * @param string|null $cookingTime
- * @param array<IngredientData> $ingredients
- * @param array<RecipeStepData> $steps
- * @param array<RecipeTipData> $tips
- * @param DishData|null $dish
- * @param VideoData|null $video
- */
 final readonly class RecipeData
 {
+    /**
+     * @param int $id
+     * @param string $title
+     * @param string $slug
+     * @param string|null $summary
+     * @param string|null $servingSize
+     * @param string|null $cookingTime
+     * @param array<IngredientData> $ingredients
+     * @param array<RecipeStepData> $steps
+     * @param array<RecipeTipData> $tips
+     * @param DishData|null $dish
+     * @param VideoData|null $video
+     */
     public function __construct(
         public int $id,
         public string $title,
@@ -54,11 +54,14 @@ final readonly class RecipeData
                 description: $s->description,
                 startTimeInSeconds: $s->start_time_in_seconds,
                 endTimeInSeconds: $s->end_time_in_seconds,
-                tips: $s->relationLoaded('tips') ? $s->tips->map(fn($t) => new RecipeTipData(
-                    description: $t->description,
-                    relatedStepNumber: $t->recipe_step_id,
-                    startTimeInSeconds: $t->start_time_in_seconds
-                ))->toArray() : []
+                // Nested tips mapping
+                tips: $s->relationLoaded('tips')
+                    ? $s->tips->map(fn($t) => new RecipeTipData(
+                        description: $t->description,
+                        relatedStepNumber: $t->recipe_step_id,
+                        startTimeInSeconds: $t->start_time_in_seconds
+                    ))->toArray()
+                    : []
             ))->toArray()
             : [];
 
@@ -70,13 +73,11 @@ final readonly class RecipeData
             ))->toArray()
             : [];
 
-        $dish = $recipe->relationLoaded('dish') && $recipe->dish
-            ? DishData::fromModel($recipe->dish)
-            : null;
+        $dishModel = $recipe->relationLoaded('dish') ? $recipe->getRelation('dish') : null;
+        $dish = $dishModel ? DishData::fromModel($dishModel) : null;
 
-        $video = $recipe->relationLoaded('video') && $recipe->video
-            ? VideoData::fromModel($recipe->video)
-            : null;
+        $videoModel = $recipe->relationLoaded('video') ? $recipe->getRelation('video') : null;
+        $video = $videoModel ? VideoData::fromModel($videoModel) : null;
 
         return new self(
             id: $recipe->id,

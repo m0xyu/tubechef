@@ -30,16 +30,22 @@ final readonly class RecipeListData
      */
     public static function fromModel(Recipe $recipe): self
     {
+        $video = $recipe->relationLoaded('video') ? $recipe->getRelation('video') : null;
+
+        $channel = ($video && $video->relationLoaded('channel'))
+            ? $video->getRelation('channel')
+            : null;
+
+        $dish = $recipe->relationLoaded('dish') ? $recipe->getRelation('dish') : null;
+
         return new self(
             id: $recipe->id,
             title: $recipe->title,
             slug: $recipe->slug,
-            thumbnailUrl: $recipe->relationLoaded('video') ? $recipe->video?->thumbnail_url : null,
-            channelName: ($recipe->relationLoaded('video') && $recipe->video?->relationLoaded('channel'))
-                ? $recipe->video->channel?->name
-                : null,
+            thumbnailUrl: $video?->thumbnail_url,
+            channelName: $channel?->name,
             cookingTime: $recipe->cooking_time,
-            dishName: $recipe->relationLoaded('dish') ? $recipe->dish?->name : null,
+            dishName: $dish?->name,
         );
     }
 }

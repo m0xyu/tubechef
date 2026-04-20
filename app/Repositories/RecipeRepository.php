@@ -11,22 +11,34 @@ use Illuminate\Support\Facades\Cache;
 
 class RecipeRepository implements RecipeRepositoryInterface
 {
+    /**
+     * Paginate recipes for listing.
+     * 
+     * @param int $page
+     * @return LengthAwarePaginator<int, RecipeListData>
+     */
     public function paginateForList(int $page): LengthAwarePaginator
     {
         $cacheKey = "recipes_index_page_{$page}";
 
-        return Cache::tags(['recipes'])->remember($cacheKey, now()->addMinutes(10), function () use ($page) {
-            $paginator = Recipe::select(['id', 'title', 'slug', 'cooking_time', 'video_id', 'dish_id', 'created_at'])
+        $cachedPaginator = Cache::tags(['recipes'])->remember($cacheKey, now()->addMinutes(10), function () use ($page) {
+            return Recipe::select(['id', 'title', 'slug', 'cooking_time', 'video_id', 'dish_id', 'created_at'])
                 ->with(['video.channel', 'dish'])
                 ->latest()
-                ->paginate(20, ['*'], 'page', $page);
-
-            return $paginator->setCollection(
-                $paginator->getCollection()->map(fn($recipe) => RecipeListData::fromModel($recipe))
-            );
+                ->paginate(20, ['*'], 'page', $page)
+                // ページネーションのアイテムをRecipeListData DTOに変換
+                ->through(fn(Recipe $recipe) => RecipeListData::fromModel($recipe));
         });
+
+        return $cachedPaginator;
     }
 
+    /**
+     * Find a recipe by its slug or fail.
+     * 
+     * @param string $slug
+     * @return RecipeData
+     */
     public function findBySlugOrFail(string $slug): RecipeData
     {
         $cacheKey = "recipe_show_{$slug}";

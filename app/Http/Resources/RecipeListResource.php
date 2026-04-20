@@ -7,11 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property int $id
- * @property int|null $cooking_time
  * @property string $title
  * @property string $slug
- * @property string $thumbnail_url
- * @property string $channel_name
+ * @property string $thumbnailUrl
+ * @property int|null $cookingTime
+ * @property string $channelName
+ * @property string|null $dishName
  * @property \App\Models\Video|null $video
  * @property DishResource|null $dish
  */

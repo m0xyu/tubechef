@@ -7,20 +7,20 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property int $id
- * @property string $video_id
+ * @property string $videoId
  * @property string $title
  * @property string|null $description
  * @property string $url
- * @property int|null $category_id
- * @property string|null $thumbnail_url
+ * @property int|null $categoryId
+ * @property string|null $thumbnailUrl
  * @property int|null $duration
- * @property string $published_at
- * @property string $recipe_generation_status
- * @property string|null $recipe_generation_status_message
- * @property int|null $view_count
- * @property int|null $like_count
- * @property int|null $comment_count
- * @property array<string>|null $topic_categories
+ * @property string $publishedAt
+ * @property string $recipeGenerationStatus
+ * @property string|null $recipeGenerationStatusMessage
+ * @property int|null $viewCount
+ * @property int|null $likeCount
+ * @property int|null $commentCount
+ * @property array<string>|null $topicCategories
  * @property-read \App\Models\Channel $channel
  * @property-read \App\Models\Recipe|null $recipe
  */

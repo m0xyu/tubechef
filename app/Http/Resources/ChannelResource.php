@@ -6,10 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property string $channel_id
+ * @property string $channelId
  * @property string $name
- * @property string $custom_url
- * @property string $thumbnail_url
+ * @property string $customUrl
+ * @property string $thumbnailUrl
  */
 class ChannelResource extends JsonResource
 {

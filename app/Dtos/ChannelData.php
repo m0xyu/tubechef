@@ -4,22 +4,22 @@ namespace App\Dtos;
 
 use App\Models\Channel;
 
-/**
- *
- * @param integer $id
- * @param string $channelId
- * @param string $name
- * @param string|null $description
- * @param string|null $thumbnailUrl
- * @param string|null $customUrl
- * @param integer|null $viewCount
- * @param integer|null $subscriberCount
- * @param integer|null $videoCount
- * @param \DateTimeImmutable $createdAt
- * @param \DateTimeImmutable $updatedAt
- */
+
 final readonly class ChannelData
 {
+    /**
+     * @param integer $id
+     * @param string $channelId
+     * @param string $name
+     * @param string|null $description
+     * @param string|null $thumbnailUrl
+     * @param string|null $customUrl
+     * @param integer|null $viewCount
+     * @param integer|null $subscriberCount
+     * @param integer|null $videoCount
+     * @param \DateTimeImmutable $createdAt
+     * @param \DateTimeImmutable $updatedAt
+     */
     public function __construct(
         public int $id,
         public string $channelId,

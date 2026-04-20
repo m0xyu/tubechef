@@ -6,8 +6,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property string $description
- * @property int|null $recipe_step_id
- * @property int|null $start_time_in_seconds
+ * @property int|null $relatedStepNumber
+ * @property int|null $startTimeInSeconds
+ * 
  */
 class RecipeTipResource extends JsonResource
 {

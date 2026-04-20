@@ -5,39 +5,37 @@ namespace App\Dtos;
 use App\Enums\RecipeGenerationStatus;
 use App\Models\Video;
 
-/**
- * Undocumented function
- *
- * @param integer $id
- * @param integer $channelId
- * @param ChannelData|null $channel
- * @param string $videoId
- * @param string $url
- * @param string $title
- * @param string|null $description
- * @param string|null $thumbnailUrl
- * @param \DateTimeImmutable $publishedAt
- * @param integer|null $duration
- * @param integer|null $viewCount
- * @param integer|null $likeCount
- * @param integer|null $commentCount
- * @param array $topicCategories
- * @param string|null $categoryId
- * @param RecipeGenerationStatus $recipeGenerationStatus
- * @param string|null $recipeGenerationStatusMessage
- * @param integer $generationRetryCount
- * @param array $aiMetadata
- * @param \DateTimeImmutable $createdAt
- * @param \DateTimeImmutable $updatedAt
- * @param \DateTimeImmutable $fetchedAt
- */
+
 final readonly class VideoData
 {
-
+    /**
+     *
+     * @param integer $id
+     * @param integer $channelId
+     * @param ChannelData|null $channel
+     * @param string $videoId
+     * @param string $url
+     * @param string $title
+     * @param string|null $description
+     * @param string|null $thumbnailUrl
+     * @param \DateTimeImmutable $publishedAt
+     * @param integer|null $duration
+     * @param integer|null $viewCount
+     * @param integer|null $likeCount
+     * @param integer|null $commentCount
+     * @param array<string> $topicCategories
+     * @param string|null $categoryId
+     * @param RecipeGenerationStatus $recipeGenerationStatus
+     * @param string|null $recipeGenerationStatusMessage
+     * @param integer $generationRetryCount
+     * @param array<string, mixed> $aiMetadata
+     * @param \DateTimeImmutable $createdAt
+     * @param \DateTimeImmutable $updatedAt
+     * @param \DateTimeImmutable $fetchedAt
+     */
     public function __construct(
         public int $id,
         public int $channelId,
-        public ?ChannelData $channel = null,
         public string $url,
         public string $videoId,
         public string $title,
@@ -57,6 +55,7 @@ final readonly class VideoData
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         public \DateTimeImmutable $fetchedAt,
+        public ?ChannelData $channel = null,
     ) {}
 
     /**
@@ -65,9 +64,8 @@ final readonly class VideoData
     public static function fromModel(Video $video): self
     {
 
-        $channel = $video->relationLoaded('channel') && $video->channel
-            ? ChannelData::fromModel($video->channel)
-            : null;
+        $channelModel = $video->relationLoaded('channel') ? $video->getRelation('channel') : null;
+        $channel = $channelModel ? ChannelData::fromModel($channelModel) : null;
 
         return new self(
             id: $video->id,
