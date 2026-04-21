@@ -2,7 +2,7 @@
 
 namespace App\Services\LLM;
 
-use App\Dtos\GeminiGenerateResultData;
+use App\Dtos\LLMResponseData;
 
 interface LLMServiceInterface
 {
@@ -13,7 +13,7 @@ interface LLMServiceInterface
      * @param array<string, mixed> $schema
      * @param string $systemInstruction
      * @param string $videoUrl
-     * @return GeminiGenerateResultData
+     * @return LLMResponseData
      */
-    public function generateStructured(string $prompt, array $schema, string $systemInstruction, string $videoUrl): GeminiGenerateResultData;
+    public function generateStructured(string $prompt, array $schema, string $systemInstruction, string $videoUrl): LLMResponseData;
 }

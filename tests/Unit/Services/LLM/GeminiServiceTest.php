@@ -3,7 +3,7 @@
 use App\Services\LLM\GeminiService;
 use App\Services\LLM\LLMServiceInterface;
 use App\Services\Schemas\RecipeSchema;
-use App\Dtos\GeminiGenerateResultData;
+use App\Dtos\LLMResponseData;
 use App\Exceptions\GeminiException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
@@ -66,13 +66,13 @@ describe('GeminiService', function () {
             'https://example.com/video.mp4'
         );
 
-        expect($result)->toBeInstanceOf(GeminiGenerateResultData::class);
+        expect($result)->toBeInstanceOf(LLMResponseData::class);
 
-        $data = $result->getData();
+        $data = $result->data;
         expect($data['title'])->toBe('Delicious Curry');
         expect($data['is_recipe'])->toBeTrue();
 
-        expect($result->getMetadata()['model_version'])->toBe('gemini-1.5-flash');
+        expect($result->model)->toBe('gemini-1.5-flash');
     });
 
     test('throws GeminiException on api failure', function () {
