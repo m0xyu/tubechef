@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -49,6 +50,7 @@ class GenerateRecipeJob implements ShouldQueue
     {
         return [
             new RateLimited('gemini-generator'),
+            (new WithoutOverlapping('recipe_gen_video_' . $this->video->id))->dontRelease(),
         ];
     }
 
