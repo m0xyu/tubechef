@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\Repositories\Contracts\RecipeRepositoryInterface;
 use App\Repositories\RecipeRepository;
+use App\Services\LLM\GeminiService;
+use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
             return new YouTubeApiClient($baseUrl, $apiKey);
         });
         $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
+        $this->app->bind(LLMServiceInterface::class, GeminiService::class);
     }
 
     /**
