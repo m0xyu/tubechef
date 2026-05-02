@@ -30,10 +30,7 @@ class GenerateRecipeJob implements ShouldQueue
     /** @var int */
     public int $backoff = 10;
 
-    /**
-     * @var Video $video
-     */
-    protected $video;
+    protected Video $video;
 
     /**
      * Create a new job instance.

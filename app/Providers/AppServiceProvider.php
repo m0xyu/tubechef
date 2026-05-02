@@ -59,8 +59,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // レシピ生成（Gemini API）の制限: 1ユーザー1分間に3回
-        RateLimiter::for('gemini-generator', function (Request $request) {
-            return Limit::perMinute(self::GEMINI_API_RATE_LIMIT)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('gemini-generator', function (mixed $origin) {
+            // HTTP リクエストからの呼び出し（Web API 経由など）
+            if ($origin instanceof Request) {
+                return Limit::perMinute(self::GEMINI_API_RATE_LIMIT)
+                    ->by($origin->user()?->id ?: $origin->ip());
+            }
+
+            // ジョブからの呼び出し（GenerateRecipeJob）
+            return Limit::perMinute(self::GEMINI_API_RATE_LIMIT)->by('gemini-api-job-global');
         });
     }
 }
