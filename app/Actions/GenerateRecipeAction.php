@@ -10,7 +10,7 @@ use App\Models\Video;
 use App\Services\LLM\LLMServiceInterface;
 use App\Services\LLM\Prompts\RecipePrompt;
 use App\Services\RecipeService;
-use App\Services\Schemas\RecipeSchema;
+use App\Services\LLM\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -58,6 +58,7 @@ class GenerateRecipeAction
         }
 
         $recipeData = GeneratedRecipeData::fromArray($result->data);
+        /** @var array<string, string> $metadataForUpdate */
         $metadataForUpdate = collect($result->usage)
             ->filter(fn($value) => is_scalar($value))
             ->map(fn($value) => (string) $value)

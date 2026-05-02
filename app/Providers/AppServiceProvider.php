@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Infrastructure\Gemini\GeminiApiClient;
 use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\Repositories\Contracts\RecipeRepositoryInterface;
 use App\Repositories\RecipeRepository;
@@ -28,6 +29,21 @@ class AppServiceProvider extends ServiceProvider
             $apiKey = is_string($apiKeyRaw) ? $apiKeyRaw : '';
             return new YouTubeApiClient($baseUrl, $apiKey);
         });
+
+        $this->app->singleton(GeminiApiClient::class, function ($app) {
+            $baseUrlRaw = config('services.gemini.base_url');
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : '';
+            $apiKeyRaw = config('services.gemini.api_key');
+            $apiKey = is_string($apiKeyRaw) ? $apiKeyRaw : '';
+            $modelRaw = config('services.gemini.flash_model');
+            $model = is_string($modelRaw) ? $modelRaw : '';
+            return new GeminiApiClient(
+                baseUrl: $baseUrl,
+                apiKey: $apiKey,
+                model: $model
+            );
+        });
+
         $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
         $this->app->bind(LLMServiceInterface::class, GeminiService::class);
     }
