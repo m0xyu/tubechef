@@ -6,10 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property string $channelId
+ * @property string $channel_id
  * @property string $name
- * @property string $customUrl
- * @property string $thumbnailUrl
+ * @property string $custom_url
+ * @property string $thumbnail_url
  */
 class ChannelResource extends JsonResource
 {
@@ -21,10 +21,10 @@ class ChannelResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'channel_id' => $this->channelId,
+            'channel_id' => $this->channel_id,
             'name' => $this->name,
-            'custom_url' => $this->customUrl,
-            'thumbnail_url' => $this->thumbnailUrl,
+            'custom_url' => $this->custom_url,
+            'thumbnail_url' => $this->thumbnail_url,
         ];
     }
 }
