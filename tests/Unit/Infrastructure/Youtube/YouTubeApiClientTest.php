@@ -11,7 +11,7 @@ describe('YouTubeApiClient', function () {
         );
     });
 
-    test('getVideos returns expected array', function () {
+    test('getVideo returns expected array', function () {
         Http::fake([
             '*/youtube/v3/videos*' => Http::response([
                 'items' => [[
@@ -46,13 +46,13 @@ describe('YouTubeApiClient', function () {
             ], 200)
         ]);
 
-        $result = $this->client->getVideos('dQw4w9WgXcQ', ['snippet']);
+        $result = $this->client->getVideo('dQw4w9WgXcQ', ['snippet']);
         expect($result['kind'])->toBe('youtube#video');
         expect($result['id'])->toBe('dQw4w9WgXcQ');
         expect($result['snippet']['title'])->toBe('Delicious Curry');
     });
 
-    test('getChannels returns expected array', function () {
+    test('getChannel returns expected array', function () {
         Http::fake([
             '*/youtube/v3/channels*' => Http::response([
                 'items' => [[
@@ -73,7 +73,7 @@ describe('YouTubeApiClient', function () {
             ], 200),
         ]);
 
-        $response = $this->client->getChannels(
+        $response = $this->client->getChannel(
             channelId: 'UC12345'
         );
         expect($response['snippet']['description'])->toBe('This is a channel description.');

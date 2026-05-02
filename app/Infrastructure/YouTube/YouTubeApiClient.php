@@ -6,6 +6,8 @@ use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\ConnectionException;
 
 class YouTubeApiClient
 {
@@ -29,7 +31,7 @@ class YouTubeApiClient
      * @return array{kind: string, id?: string, snippet?: array<string, mixed>, contentDetails?: array<string, mixed>, statistics?: array<string, mixed>, topicDetails?: array<string, mixed>}
      * @throws VideoException
      */
-    public function getVideos(string $videoId, array $parts): array
+    public function getVideo(string $videoId, array $parts): array
     {
         if (empty($videoId)) {
             throw new \InvalidArgumentException('Video ID cannot be empty.');
@@ -56,7 +58,7 @@ class YouTubeApiClient
      * @return array{kind: string, id?: string, snippet?: array<string, mixed>, statistics?: array<string, mixed>}
      * @throws VideoException
      */
-    public function getChannels(string $channelId): array
+    public function getChannel(string $channelId): array
     {
         if (empty($channelId)) {
             throw new \InvalidArgumentException('Channel ID cannot be empty.');
@@ -83,17 +85,27 @@ class YouTubeApiClient
      */
     private function request(string $endpoint, array $params, ?string $contextId = null): array
     {
-        $response = Http::retry(
-            $this->retryCount,
-            $this->retryDelayMs,
-            function (\Throwable $e) use ($contextId) {
-                Log::warning('YouTube API Request Failed, retrying...', [
-                    'context_id' => $contextId,
-                    'error' => $e->getMessage(),
-                ]);
-                return true;
-            }
-        )->get("{$this->baseUrl}/{$endpoint}", $params);
+        try {
+            $response = Http::retry(
+                $this->retryCount,
+                $this->retryDelayMs,
+                function (\Throwable $e) use ($contextId) {
+                    Log::warning('YouTube API Request Failed, retrying...', [
+                        'context_id' => $contextId,
+                        'error' => $e->getMessage(),
+                    ]);
+                    return true;
+                }
+            )->get("{$this->baseUrl}/{$endpoint}", $params);
+        } catch (RequestException $e) {
+            $response = $e->response;
+        } catch (ConnectionException $e) {
+            Log::error('YouTube API Connection Error', [
+                'context_id' => $contextId,
+                'error' => $e->getMessage()
+            ]);
+            throw new VideoException(VideoError::INTERNAL_ERROR, 'Network connection failed.');
+        }
 
         if ($response->failed()) {
             $errorBody = $response->json();

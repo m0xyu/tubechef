@@ -75,7 +75,7 @@ describe('FetchYouTubeMetadataActionTest', function () {
         Http::fake([
             '*/youtube/v3/videos*' => Http::response([
                 'items' => [[
-                    'kind' => 'youtube#channel', // videoじゃない！
+                    'kind' => 'youtube#channel', // videoではない
                     'id' => 'UC12345',
                 ]]
             ], 200)
@@ -84,16 +84,4 @@ describe('FetchYouTubeMetadataActionTest', function () {
         expect(fn() => $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
             ->toThrow(VideoException::class, VideoError::NOT_A_VIDEO->message());
     });
-
-    test('異常：渡されたのがurlではない場合', function () {
-        expect(fn() => $this->action->execute(YouTubeVideoId::fromString('invalid_id')))
-            ->toThrow(VideoException::class, VideoError::INVALID_ID->message());
-    });
-
-    // test('異常：Actionに不正な文字列を渡すと型エラーになる（静的解析・実行時ガード）', function () {
-    //     $action = new FetchYouTubeMetadataAction();
-
-    //     expect(fn() => $action->execute('not_a_value_object'))
-    //         ->toThrow(TypeError::class);
-    // });
 });

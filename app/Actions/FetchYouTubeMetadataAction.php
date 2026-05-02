@@ -27,7 +27,7 @@ class FetchYouTubeMetadataAction
      */
     public function execute(YouTubeVideoId $videoId, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
     {
-        $item = $this->youtubeClient->getVideos((string)$videoId, $parts);
+        $item = $this->youtubeClient->getVideo((string)$videoId, $parts);
 
         if (($item['kind']) !== 'youtube#video') {
             throw new VideoException(VideoError::NOT_A_VIDEO);
