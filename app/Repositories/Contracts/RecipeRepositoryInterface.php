@@ -9,7 +9,7 @@ interface RecipeRepositoryInterface
 {
     /**
      * @param int $page
-     * @return LengthAwarePaginator
+     * @return LengthAwarePaginator<int, Recipe>
      */
     public function paginateForList(int $page): LengthAwarePaginator;
 

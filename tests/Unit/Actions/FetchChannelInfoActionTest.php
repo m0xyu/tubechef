@@ -2,9 +2,18 @@
 
 use App\Actions\FetchChannelInfoAction;
 use App\Dtos\YouTubeChannelData;
+use App\Infrastructure\YouTube\YouTubeApiClient;
 use Illuminate\Support\Facades\Http;
 
 describe('FetchChannelInfoAction', function () {
+    beforeEach(function () {
+        $this->client = new YouTubeApiClient(
+            baseUrl: 'https://www.googleapis.com/youtube/v3',
+            apiKey: 'dummy'
+        );
+        $this->action = new FetchChannelInfoAction($this->client);
+    });
+
     test('fetches channel info successfully', function () {
         Http::fake([
             '*/youtube/v3/channels*' => Http::response([
@@ -26,8 +35,7 @@ describe('FetchChannelInfoAction', function () {
             ], 200),
         ]);
 
-        $action = new FetchChannelInfoAction();
-        $channelInfo = $action->execute('UC12345');
+        $channelInfo = $this->action->execute('UC12345');
 
         expect($channelInfo)->toEqual(new YouTubeChannelData(
             channelDescription: 'This is a channel description.',
@@ -44,8 +52,7 @@ describe('FetchChannelInfoAction', function () {
             '*/youtube/v3/channels*' => Http::response([], 404),
         ]);
 
-        $action = new FetchChannelInfoAction();
-        $channelInfo = $action->execute('invalid_id');
+        $channelInfo = $this->action->execute('invalid_id');
 
         expect($channelInfo)->toEqual(YouTubeChannelData::empty());
         expect($channelInfo->channelDescription)->toBeNull();

@@ -7,11 +7,10 @@ use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Models\Recipe;
 use App\Models\Video;
-use App\Services\LLM\LLMServiceFactory;
 use App\Services\LLM\LLMServiceInterface;
+use App\Services\LLM\Prompts\RecipePrompt;
 use App\Services\RecipeService;
-use App\Services\Schemas\RecipeSchema;
-use Illuminate\Support\Facades\Cache;
+use App\Services\LLM\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -21,12 +20,12 @@ class GenerateRecipeAction
     protected LLMServiceInterface $llmService;
 
     public function __construct(
-        LLMServiceFactory $factory,
+        LLMServiceInterface $llmService,
         protected RecipeService $recipeService,
         protected VideoMetadataUpdateAction $videoMetadataUpdateAction
 
     ) {
-        $this->llmService = $factory->make();
+        $this->llmService = $llmService;
     }
 
     /**
@@ -45,11 +44,13 @@ class GenerateRecipeAction
             throw new \RuntimeException('Recipe relation exists but is not a Recipe instance.');
         }
 
-        $prompt = $this->buildPrompt($video->title, $video->description ?? '');
-        $systemInstruction = $this->getInstruction();
-
         try {
-            $result = $this->llmService->generateStructured($prompt, RecipeSchema::get(), $systemInstruction, $video->url);
+            $result = $this->llmService->generateStructured(
+                RecipePrompt::build($video),
+                RecipeSchema::get(),
+                RecipePrompt::systemInstruction(),
+                $video->url
+            );
             Log::info("Gemini生成成功: VideoID {$video->id}");
         } catch (Throwable $e) {
             Log::error("Gemini生成エラー: VideoID {$video->id}", ['error' => $e->getMessage()]);
@@ -57,18 +58,11 @@ class GenerateRecipeAction
         }
 
         $recipeData = GeneratedRecipeData::fromArray($result->data);
-        $metadata = $result->usage;
-        // VideoMetadataUpdateAction::execute()の第2引数がarray<string>型の場合に合わせて変換
-        $metadataForUpdate = [];
-        if (is_array($metadata)) {
-            foreach ($metadata as $k => $v) {
-                if (is_string($v)) {
-                    $metadataForUpdate[$k] = $v;
-                } elseif (is_scalar($v)) {
-                    $metadataForUpdate[$k] = strval($v);
-                }
-            }
-        }
+        /** @var array<string, string> $metadataForUpdate */
+        $metadataForUpdate = collect($result->usage)
+            ->filter(fn($value) => is_scalar($value))
+            ->map(fn($value) => (string) $value)
+            ->toArray();
 
         if (!$recipeData->isRecipe) {
             $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);
@@ -82,7 +76,6 @@ class GenerateRecipeAction
                 $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);
                 $video->markAsCompleted();
 
-                Cache::tags(['recipes'])->flush();
                 return $recipe;
             });
         } catch (Throwable $e) {
@@ -92,31 +85,5 @@ class GenerateRecipeAction
             ]);
             throw new RecipeException(RecipeError::SAVE_FAILED, previous: $e);
         }
-    }
-
-    /** @return string */
-    private function getInstruction(): string
-    {
-        return 'あなたはプロの料理研究家兼データエンジニアです。';
-    }
-
-    /**
-     * @param string $title
-     * @param string $description
-     * @return string
-     */
-    private function buildPrompt($title, $description): string
-    {
-        return <<<EOT
-            提供される「YouTube動画（映像・音声）」および「タイトル・概要欄」を総合的に分析し、正確なレシピデータを抽出してください。
-            概要欄に分量や手順が記載されていない場合は、動画内の映像や音声解説から情報を補完してください。
-            料理動画ではない場合（ゲーム実況やニュースなど）は、is_recipeをfalseにしてください。
-    
-            ## 動画タイトル
-            {$title}
-
-            ## 概要欄
-            {$description}
-        EOT;
     }
 }

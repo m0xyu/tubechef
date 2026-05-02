@@ -7,15 +7,30 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class YouTubeUrlRule implements ValidationRule
 {
+    /**
+     * YouTubeのURLかつShortsでないことを検証する
+     *
+     * @param string $attribute
+     * @param mixed $value
+     * @param Closure $fail
+     * @return void
+     */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!preg_match('/(?:youtube\.com|youtu\.be)/', $value)) {
+        if (!is_string($value)) {
+            $fail('YouTubeのURLを正しく入力してください。');
+            return;
+        }
+
+        $pattern = '/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/';
+        if (!preg_match($pattern, $value)) {
             $fail('YouTubeのURLを入力してください。');
             return;
         }
 
         // 2. Shortsチェック
-        if (str_contains($value, '/shorts/')) {
+        $needles = '/shorts/';
+        if (str_contains($value, $needles)) {
             $fail('Shorts動画は現在サポートしていません。');
         }
     }

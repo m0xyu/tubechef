@@ -56,6 +56,11 @@ class VideoController extends Controller
         FetchChannelInfoAction $fetchChannelInfo,
         YouTubeMetadataStoreAction $youTubeMetadataStore,
     ): VideoPreviewResource {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+
         $videoId = YouTubeVideoId::fromUrl($request->getVideoUrl());
         $existingVideo = Video::where('video_id', (string)$videoId)->first();
 
@@ -85,11 +90,11 @@ class VideoController extends Controller
             $channelData
         );
 
-        $video = DB::transaction(function () use ($youTubeMetadataStore, $youtubeMetadata, $request) {
+        $video = DB::transaction(function () use ($youTubeMetadataStore, $youtubeMetadata, $user) {
             $video = $youTubeMetadataStore->execute($youtubeMetadata);
 
             $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
-            $request->user()->historyVideos()->syncWithoutDetaching([$video->id]);
+            $user->historyVideos()->syncWithoutDetaching([$video->id]);
 
             DB::afterCommit(function () use ($video) {
                 GenerateRecipeJob::dispatch($video);

@@ -87,7 +87,8 @@ class Video extends Model
         'published_at' => 'datetime',
         'fetched_at' => 'datetime',
         'recipe_generation_status' => RecipeGenerationStatus::class,
-        'ai_metadata' => 'array'
+        'ai_metadata' => 'array',
+        'generation_retry_count' => 'integer',
     ];
 
     /**

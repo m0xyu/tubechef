@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Schemas;
+namespace App\Services\LLM\Schemas;
 
 final class RecipeSchema
 {

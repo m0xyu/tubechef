@@ -1,23 +1,17 @@
 <?php
 
-use App\Actions\FetchYouTubeMetadataAction;
-use App\Dtos\YouTubeVideoData;
-use App\Enums\Errors\VideoError;
-use App\Exceptions\VideoException;
 use App\Infrastructure\YouTube\YouTubeApiClient;
-use App\ValueObjects\YouTubeVideoId;
 use Illuminate\Support\Facades\Http;
 
-describe('FetchYouTubeMetadataActionTest', function () {
+describe('YouTubeApiClient', function () {
     beforeEach(function () {
         $this->client = new YouTubeApiClient(
             baseUrl: 'https://www.googleapis.com/youtube/v3',
-            apiKey: 'dummy'
+            apiKey: 'dummy',
         );
-        $this->action = new FetchYouTubeMetadataAction($this->client);
     });
 
-    test('fetches video info successfully', function () {
+    test('getVideo returns expected array', function () {
         Http::fake([
             '*/youtube/v3/videos*' => Http::response([
                 'items' => [[
@@ -52,36 +46,40 @@ describe('FetchYouTubeMetadataActionTest', function () {
             ], 200)
         ]);
 
-        $channelInfo = $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'));
-
-        expect($channelInfo)->toEqual(new YouTubeVideoData(
-            videoId: 'dQw4w9WgXcQ',
-            title: 'Delicious Curry',
-            channelName: 'Chef Ryuji',
-            channelId: 'UC12345',
-            categoryId: 10,
-            description: 'This is a description.',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            publishedAt: '2023-01-01T12:00:00Z',
-            durationSeconds: 930,
-            viewCount: 1000,
-            likeCount: 100,
-            commentCount: 10,
-            topicCategories: ['Food', 'Lifestyle (sociology)']
-        ));
+        $result = $this->client->getVideo('dQw4w9WgXcQ', ['snippet']);
+        expect($result['kind'])->toBe('youtube#video');
+        expect($result['id'])->toBe('dQw4w9WgXcQ');
+        expect($result['snippet']['title'])->toBe('Delicious Curry');
     });
 
-    test('異常：kindがvideo以外の場合', function () {
+    test('getChannel returns expected array', function () {
         Http::fake([
-            '*/youtube/v3/videos*' => Http::response([
+            '*/youtube/v3/channels*' => Http::response([
                 'items' => [[
-                    'kind' => 'youtube#channel', // videoではない
-                    'id' => 'UC12345',
+                    'snippet' => [
+                        'description' => 'This is a channel description.',
+                        'customUrl' => 'mychannel',
+                        'thumbnails' => [
+                            'high' => ['url' => 'https://example.com/channel_thumb.jpg'],
+                            'default' => ['url' => 'https://example.com/channel_thumb_default.jpg'],
+                        ],
+                    ],
+                    'statistics' => [
+                        'subscriberCount' => '1500',
+                        'viewCount' => '50000',
+                        'videoCount' => '100',
+                    ],
                 ]]
-            ], 200)
+            ], 200),
         ]);
 
-        expect(fn() => $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
-            ->toThrow(VideoException::class, VideoError::NOT_A_VIDEO->message());
+        $response = $this->client->getChannel(
+            channelId: 'UC12345'
+        );
+        expect($response['snippet']['description'])->toBe('This is a channel description.');
+        expect($response['snippet']['customUrl'])->toBe('mychannel');
+        expect($response['statistics']['subscriberCount'])->toBe('1500');
+        expect($response['statistics']['viewCount'])->toBe('50000');
+        expect($response['statistics']['videoCount'])->toBe('100');
     });
 });

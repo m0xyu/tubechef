@@ -36,6 +36,10 @@ class VideoUrlRequest extends FormRequest
      */
     public function getVideoUrl(): string
     {
-        return $this->input('video_url');
+        $url = $this->input('video_url');
+        if (!is_string($url)) {
+            throw new \InvalidArgumentException('Invalid video URL');
+        }
+        return $url;
     }
 }
