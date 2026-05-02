@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Infrastructure\YouTube;
+
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
 use Illuminate\Support\Facades\Http;
@@ -24,7 +26,7 @@ class YouTubeApiClient
      * YouTube APIを呼び出して動画情報を取得する例
      * @param string $videoId
      * @param array<string> $parts
-     * @return array{kind: string, etag?: string, id?: string, snippet?: array, contentDetails?: array, statistics?: array, topicDetails?: array}
+     * @return array{kind: string, id?: string, snippet?: array<string, mixed>, contentDetails?: array<string, mixed>, statistics?: array<string, mixed>, topicDetails?: array<string, mixed>}
      * @throws VideoException
      */
     public function getVideos(string $videoId, array $parts): array
@@ -42,13 +44,16 @@ class YouTubeApiClient
             'id' => $videoId,
             'key' => $this->apiKey,
         ];
-        return $this->request('videos', $params, $videoId);
+
+        /** @var array{kind: string, id?: string, snippet?: array<string, mixed>, contentDetails?: array<string, mixed>, statistics?: array<string, mixed>, topicDetails?: array<string, mixed>} $result */
+        $result = $this->request('videos', $params, $videoId);
+        return $result;
     }
 
     /**
      * YouTube APIを呼び出してチャンネル情報を取得する例
      * @param string $channelId
-     * @return array{kind: string, etag?: string, id?: string, snippet?: array, statistics?: array}
+     * @return array{kind: string, id?: string, snippet?: array<string, mixed>, statistics?: array<string, mixed>}
      * @throws VideoException
      */
     public function getChannels(string $channelId): array
@@ -61,16 +66,19 @@ class YouTubeApiClient
             'id' => $channelId,
             'key' => $this->apiKey,
         ];
-        return $this->request('channels', $params, $channelId);
+
+        /** @var array{kind: string, id?: string, snippet?: array<string, mixed>, statistics?: array<string, mixed>} $result */
+        $result = $this->request('channels', $params, $channelId);
+
+        return $result;
     }
 
     /**
      * 共通リクエスト処理
-     * @template T of array
      * @param string $endpoint
      * @param array<string, string> $params
      * @param string|null $contextId
-     * @return T
+     * @return array<string, mixed>
      * @throws VideoException
      */
     private function request(string $endpoint, array $params, ?string $contextId = null): array
@@ -78,7 +86,7 @@ class YouTubeApiClient
         $response = Http::retry(
             $this->retryCount,
             $this->retryDelayMs,
-            function (\Exception $e) use ($contextId) {
+            function (\Throwable $e) use ($contextId) {
                 Log::warning('YouTube API Request Failed, retrying...', [
                     'context_id' => $contextId,
                     'error' => $e->getMessage(),
@@ -94,9 +102,19 @@ class YouTubeApiClient
                 'response' => $errorBody,
                 'context_id' => $contextId
             ]);
-            $errorMsg = is_array($errorBody) && isset($errorBody['error']['message'])
-                ? $errorBody['error']['message']
-                : 'Unknown error';
+
+            $errorMsg = 'Unknown error';
+
+            if (
+                is_array($errorBody) &&
+                isset($errorBody['error']) &&
+                is_array($errorBody['error']) &&
+                isset($errorBody['error']['message']) &&
+                is_string($errorBody['error']['message'])
+            ) {
+                $errorMsg = $errorBody['error']['message'];
+            }
+
             throw new VideoException(VideoError::FETCH_FAILED, $errorMsg);
         }
 
@@ -107,6 +125,7 @@ class YouTubeApiClient
             throw new VideoException(VideoError::FETCH_FAILED, 'No video found or video is private.');
         }
 
+        /** @var array<string, mixed> $item */
         return $item;
     }
 }

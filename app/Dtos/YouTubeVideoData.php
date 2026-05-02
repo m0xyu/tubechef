@@ -2,6 +2,9 @@
 
 namespace App\Dtos;
 
+use App\ValueObjects\YouTubeVideoId;
+use Illuminate\Support\Arr;
+
 final readonly class YouTubeVideoData
 {
     /**
@@ -38,19 +41,19 @@ final readonly class YouTubeVideoData
     /**
      * Action内の配列からインスタンスを生成する静的メソッド
      * @param array{
-     * video_id: string,
-     * title: string,
-     * channel_name: string|null,
-     * channel_id: string,
-     * category_id: int|null,
-     * description: string|null,
-     * thumbnail_url: string|null,
-     * published_at: string|null,
-     * duration: int,
-     * view_count: int|null,
-     * like_count: int|null,
-     * comment_count: int|null,
-     * topic_categories: array<string>
+     *   video_id: string,
+     *   title: string,
+     *   channel_name: string|null,
+     *   channel_id: string,
+     *   category_id: int|null,
+     *   description: string|null,
+     *   thumbnail_url: string|null,
+     *   published_at: string|null,
+     *   duration: int,
+     *   view_count: int|null,
+     *   like_count: int|null,
+     *   comment_count: int|null,
+     *   topic_categories: array<string>
      * } $data
      * @return self
      */
@@ -71,5 +74,57 @@ final readonly class YouTubeVideoData
             commentCount: isset($data['comment_count']) ? (int) $data['comment_count'] : null,
             topicCategories: $data['topic_categories'],
         );
+    }
+
+    public static function fromApiResponse(YouTubeVideoId $videoId, array $item): self
+    {
+        $snippet = $item['snippet'] ?? [];
+        $details = $item['contentDetails'] ?? [];
+        $statistics = $item['statistics'] ?? [];
+        $topicDetails = $item['topicDetails'] ?? [];
+
+        $thumbHigh = Arr::get($snippet, 'thumbnails.high.url');
+        $thumbDefault = Arr::get($snippet, 'thumbnails.default.url');
+
+        $topicCategoriesRaw = Arr::get($topicDetails, 'topicCategories', []);
+        $topicCategories = is_array($topicCategoriesRaw) ? array_values(array_filter($topicCategoriesRaw, 'is_string')) : [];
+
+        // 厳格な型チェックとキャストを実行してインスタンス化
+        return self::fromArray([
+            'video_id' => (string)$videoId,
+            'title' => (string)Arr::get($snippet, 'title', ''),
+            'channel_name' => Arr::get($snippet, 'channelTitle'),
+            'channel_id' => (string)Arr::get($snippet, 'channelId', ''),
+            'category_id' => (int)Arr::get($snippet, 'categoryId', 0),
+            'description' => Arr::get($snippet, 'description'),
+            'thumbnail_url' => is_string($thumbHigh) ? $thumbHigh : (is_string($thumbDefault) ? $thumbDefault : null),
+            'published_at' => Arr::get($snippet, 'publishedAt'),
+            'duration' => self::convertDurationToSeconds(Arr::get($details, 'duration')),
+            'view_count' => (int)Arr::get($statistics, 'viewCount', 0),
+            'like_count' => (int)Arr::get($statistics, 'likeCount', 0),
+            'comment_count' => (int)Arr::get($statistics, 'commentCount', 0),
+            'topic_categories' => self::extractTopicNames($topicCategories),
+        ]);
+    }
+
+    /**
+     * DTOの内部ロジックとして隠蔽する
+     */
+    private static function extractTopicNames(array $urls): array
+    {
+        return array_map(function ($url) {
+            return str_replace('_', ' ', urldecode(basename($url)));
+        }, $urls);
+    }
+
+    private static function convertDurationToSeconds(mixed $isoDuration): int
+    {
+        if (!is_string($isoDuration)) return 0;
+        try {
+            $interval = new \DateInterval($isoDuration);
+            return ($interval->h * 3600) + ($interval->i * 60) + $interval->s;
+        } catch (\Exception $e) {
+            return 0;
+        }
     }
 }

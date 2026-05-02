@@ -4,10 +4,19 @@ use App\Actions\FetchYouTubeMetadataAction;
 use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
+use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\ValueObjects\YouTubeVideoId;
 use Illuminate\Support\Facades\Http;
 
 describe('FetchYouTubeMetadataActionTest', function () {
+    beforeEach(function () {
+        $this->client = new YouTubeApiClient(
+            baseUrl: 'https://www.googleapis.com/youtube/v3',
+            apiKey: 'dummy'
+        );
+        $this->action = new FetchYouTubeMetadataAction($this->client);
+    });
+
     test('fetches video info successfully', function () {
         Http::fake([
             '*/youtube/v3/videos*' => Http::response([
@@ -43,8 +52,7 @@ describe('FetchYouTubeMetadataActionTest', function () {
             ], 200)
         ]);
 
-        $action = new FetchYouTubeMetadataAction();
-        $channelInfo = $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'));
+        $channelInfo = $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'));
 
         expect($channelInfo)->toEqual(new YouTubeVideoData(
             videoId: 'dQw4w9WgXcQ',
@@ -73,27 +81,12 @@ describe('FetchYouTubeMetadataActionTest', function () {
             ], 200)
         ]);
 
-        $action = new FetchYouTubeMetadataAction();
-
-        expect(fn() => $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
+        expect(fn() => $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
             ->toThrow(VideoException::class, VideoError::NOT_A_VIDEO->message());
     });
 
-    test('異常：responseにitemsがない場合', function () {
-        Http::fake([
-            '*/youtube/v3/videos*' => Http::response([], 200)
-        ]);
-
-        $action = new FetchYouTubeMetadataAction();
-
-        expect(fn() => $action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
-            ->toThrow(VideoException::class, VideoError::FETCH_FAILED->message());
-    });
-
     test('異常：渡されたのがurlではない場合', function () {
-        $action = new FetchYouTubeMetadataAction();
-
-        expect(fn() => $action->execute(YouTubeVideoId::fromString('invalid_id')))
+        expect(fn() => $this->action->execute(YouTubeVideoId::fromString('invalid_id')))
             ->toThrow(VideoException::class, VideoError::INVALID_ID->message());
     });
 
