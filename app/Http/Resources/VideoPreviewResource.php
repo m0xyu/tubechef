@@ -10,6 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @mixin \App\Models\Video
  * @property string $video_id
  * @property string $title
+ * @property \App\Models\Video $resource
  * @property string $video_url
  * @property string $thumbnail_url
  * @property int|null $duration

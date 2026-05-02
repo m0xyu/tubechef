@@ -13,7 +13,7 @@ class RecipeRepository implements RecipeRepositoryInterface
      * Paginate recipes for listing.
      * 
      * @param int $page
-     * @return LengthAwarePaginator
+     * @return LengthAwarePaginator<int, Recipe>
      */
     public function paginateForList(int $page): LengthAwarePaginator
     {

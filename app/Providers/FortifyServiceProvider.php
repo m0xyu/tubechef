@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -43,7 +44,9 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
+            $input = $request->input(Fortify::username());
+            $username = is_string($input) ? $input : '';
+            $throttleKey = Str::transliterate(Str::lower($username) . '|' . $request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
@@ -89,8 +92,14 @@ class FortifyServiceProvider extends ServiceProvider
             }
         });
 
-        ResetPassword::createUrlUsing(function ($user, string $token) {
-            return "http://localhost:5173/reset-password?token={$token}&email={$user->email}";
+        ResetPassword::createUrlUsing(function (mixed $user, string $token) {
+            /** @var User $user */
+            $email = urlencode((string) $user->email);
+
+            $configUrl = config('app.frontend_url');
+            $baseUrl = is_string($configUrl) ? $configUrl : 'http://localhost:5173';
+
+            return "{$baseUrl}/reset-password?token={$token}&email={$email}";
         });
     }
 }
