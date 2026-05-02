@@ -14,7 +14,6 @@ use App\Services\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 use Throwable;
 
 class GenerateRecipeAction
@@ -39,10 +38,14 @@ class GenerateRecipeAction
     public function execute(Video $video): Recipe
     {
         if ($video->recipe()->exists()) {
-            return $video->recipe;
+            $existing = $video->recipe;
+            if ($existing instanceof Recipe) {
+                return $existing;
+            }
+            throw new \RuntimeException('Recipe relation exists but is not a Recipe instance.');
         }
 
-        $prompt = $this->buildPrompt($video->title, $video->description);
+        $prompt = $this->buildPrompt($video->title, $video->description ?? '');
         $systemInstruction = $this->getInstruction();
 
         try {
@@ -55,23 +58,38 @@ class GenerateRecipeAction
 
         $recipeData = GeneratedRecipeData::fromArray($result->data);
         $metadata = $result->usage;
+        // VideoMetadataUpdateAction::execute()の第2引数がarray<string>型の場合に合わせて変換
+        $metadataForUpdate = [];
+        if (is_array($metadata)) {
+            foreach ($metadata as $k => $v) {
+                if (is_string($v)) {
+                    $metadataForUpdate[$k] = $v;
+                } elseif (is_scalar($v)) {
+                    $metadataForUpdate[$k] = strval($v);
+                }
+            }
+        }
 
         if (!$recipeData->isRecipe) {
-            $this->videoMetadataUpdateAction->execute($video, $metadata);
+            $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);
             throw new RecipeException(RecipeError::NOT_A_RECIPE);
         }
 
         try {
-            return DB::transaction(function () use ($video, $recipeData, $metadata) {
+            return DB::transaction(function () use ($video, $recipeData, $metadataForUpdate) {
                 $recipe = $this->recipeService->storeGeneratedRecipe($video, $recipeData);
 
-                $this->videoMetadataUpdateAction->execute($video, $metadata);
+                $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);
                 $video->markAsCompleted();
 
                 Cache::tags(['recipes'])->flush();
                 return $recipe;
             });
         } catch (Throwable $e) {
+            Log::error("レシピ保存エラー: VideoID {$video->id}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw new RecipeException(RecipeError::SAVE_FAILED, previous: $e);
         }
     }

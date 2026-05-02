@@ -36,12 +36,12 @@ final readonly class YouTubeChannelData
     public static function fromArray(array $data): self
     {
         return new self(
-            channelDescription: $data['channel_description'] ?? null,
-            channelCustomUrl: $data['channel_custom_url'] ?? null,
-            channelThumbnailUrl: $data['channel_thumbnail_url'] ?? null,
-            subscriberCount: $data['subscriber_count'] ?? null,
-            channelViewCount: $data['channel_view_count'] ?? null,
-            channelVideoCount: $data['channel_video_count'] ?? null,
+            channelDescription: isset($data['channel_description']) ? (string)$data['channel_description'] : null,
+            channelCustomUrl: isset($data['channel_custom_url']) ? (string)$data['channel_custom_url'] : null,
+            channelThumbnailUrl: isset($data['channel_thumbnail_url']) ? (string)$data['channel_thumbnail_url'] : null,
+            subscriberCount: isset($data['subscriber_count']) ? (int)$data['subscriber_count'] : null,
+            channelViewCount: isset($data['channel_view_count']) ? (int)$data['channel_view_count'] : null,
+            channelVideoCount: isset($data['channel_video_count']) ? (int)$data['channel_video_count'] : null,
         );
     }
 

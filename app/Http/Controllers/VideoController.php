@@ -91,7 +91,9 @@ class VideoController extends Controller
             $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
             $request->user()->historyVideos()->syncWithoutDetaching([$video->id]);
 
-            GenerateRecipeJob::dispatch($video);
+            DB::afterCommit(function () use ($video) {
+                GenerateRecipeJob::dispatch($video);
+            });
 
             return $video;
         });

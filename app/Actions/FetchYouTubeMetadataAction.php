@@ -8,6 +8,7 @@ use App\Exceptions\VideoException;
 use App\ValueObjects\YouTubeVideoId;
 use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Arr;
 
 class FetchYouTubeMetadataAction
 {
@@ -24,8 +25,23 @@ class FetchYouTubeMetadataAction
      */
     public function execute(YouTubeVideoId $videoId, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
     {
-        $baseUrl = config('services.youtube.base_url');
-        $apiKey = config('services.google.api_key');
+        $item = $this->fetchVideoMetadata($videoId, $parts);
+        return $this->toDto($videoId, $item);
+    }
+
+    /**
+     * APIリクエストとレスポンスバリデーション
+     * @param YouTubeVideoId $videoId
+     * @param array<string> $parts
+     * @return array<string, mixed>
+     * @throws VideoException
+     */
+    protected function fetchVideoMetadata(YouTubeVideoId $videoId, array $parts): array
+    {
+        $baseUrlRaw = config('services.youtube.base_url');
+        $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : '';
+        $apiKeyRaw = config('services.google.api_key');
+        $apiKey = is_string($apiKeyRaw) ? $apiKeyRaw : '';
 
         $response = Http::get("{$baseUrl}/videos", [
             'part' => implode(',', $parts),
@@ -38,33 +54,72 @@ class FetchYouTubeMetadataAction
         }
 
         $item = $response->json('items.0');
-
-        $kind = $item['kind'] ?? null;
-        if ($kind !== 'youtube#video') {
+        if (!is_array($item)) {
+            throw new VideoException(VideoError::FETCH_FAILED);
+        }
+        if (($item['kind'] ?? null) !== 'youtube#video') {
             throw new VideoException(VideoError::NOT_A_VIDEO);
         }
+        // array<string, mixed> になるようkeyをstringに限定
+        $result = [];
+        foreach ($item as $k => $v) {
+            if (is_string($k)) {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
+    }
 
-        $snippet = $item['snippet'] ?? [];
-        $details = $item['contentDetails'] ?? [];
-        $statistics = $item['statistics'] ?? [];
-        $topicDetails = $item['topicDetails'] ?? [];
+    /**
+     * 配列からDTOへ変換
+     * @param YouTubeVideoId $videoId
+     * @param array<string, mixed> $item
+     * @return YouTubeVideoData
+     */
+    protected function toDto(YouTubeVideoId $videoId, array $item): YouTubeVideoData
+    {
+        $snippet = is_array($item['snippet'] ?? null) ? $item['snippet'] : [];
+        $details = is_array($item['contentDetails'] ?? null) ? $item['contentDetails'] : [];
+        $statistics = is_array($item['statistics'] ?? null) ? $item['statistics'] : [];
+        $topicDetails = is_array($item['topicDetails'] ?? null) ? $item['topicDetails'] : [];
 
-        $cleanTags = $this->extractTopicNames($topicDetails['topicCategories'] ?? []);
-        $durationSeconds = $this->convertDurationToSeconds($details['duration'] ?? null);
+        // Arr::get を活用して深い階層のデータへ安全にアクセス（ネストの解消）
+        $title = Arr::get($snippet, 'title');
+        $channelTitle = Arr::get($snippet, 'channelTitle');
+        $channelId = Arr::get($snippet, 'channelId');
+        $categoryId = Arr::get($snippet, 'categoryId');
+        $description = Arr::get($snippet, 'description');
+        $publishedAt = Arr::get($snippet, 'publishedAt');
 
+        $thumbHigh = Arr::get($snippet, 'thumbnails.high.url');
+        $thumbDefault = Arr::get($snippet, 'thumbnails.default.url');
+        $thumbnailUrl = is_string($thumbHigh) ? $thumbHigh : (is_string($thumbDefault) ? $thumbDefault : null);
+
+        $durationRaw = Arr::get($details, 'duration');
+        $durationSeconds = $this->convertDurationToSeconds(is_string($durationRaw) ? $durationRaw : null);
+
+        $viewCount = Arr::get($statistics, 'viewCount');
+        $likeCount = Arr::get($statistics, 'likeCount');
+        $commentCount = Arr::get($statistics, 'commentCount');
+
+        $topicCategoriesRaw = Arr::get($topicDetails, 'topicCategories', []);
+        $topicCategories = is_array($topicCategoriesRaw) ? array_values(array_filter($topicCategoriesRaw, 'is_string')) : [];
+        $cleanTags = $this->extractTopicNames($topicCategories);
+
+        // 厳格な型チェックとキャストを実行
         $resultArray = [
             'video_id' => (string)$videoId,
-            'title' => $snippet['title'] ?? null,
-            'channel_name' => $snippet['channelTitle'] ?? null,
-            'channel_id' => $snippet['channelId'] ?? null,
-            'category_id' => $snippet['categoryId'] ?? null,
-            'description' => $snippet['description'] ?? null,
-            'thumbnail_url' => $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['default']['url'] ?? null,
-            'published_at' => $snippet['publishedAt'] ?? null,
-            'duration' => $durationSeconds,
-            'view_count' => $statistics['viewCount'] ?? null,
-            'like_count' => $statistics['likeCount'] ?? null,
-            'comment_count' => $statistics['commentCount'] ?? null,
+            'title' => is_string($title) ? $title : '',
+            'channel_name' => is_string($channelTitle) ? $channelTitle : null,
+            'channel_id' => is_string($channelId) ? $channelId : '',
+            'category_id' => is_numeric($categoryId) ? (int)$categoryId : null,
+            'description' => is_string($description) ? $description : null,
+            'thumbnail_url' => $thumbnailUrl,
+            'published_at' => is_string($publishedAt) ? $publishedAt : null,
+            'duration' => is_int($durationSeconds) ? $durationSeconds : 0,
+            'view_count' => is_numeric($viewCount) ? (int)$viewCount : null,
+            'like_count' => is_numeric($likeCount) ? (int)$likeCount : null,
+            'comment_count' => is_numeric($commentCount) ? (int)$commentCount : null,
             'topic_categories' => $cleanTags,
         ];
 

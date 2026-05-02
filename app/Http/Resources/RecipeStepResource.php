@@ -5,10 +5,10 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property int $stepNumber
+ * @property int $step_number
  * @property string $description
- * @property int|null $startTimeInSeconds
- * @property int|null $endTimeInSeconds
+ * @property int|null $start_time_in_seconds
+ * @property int|null $end_time_in_seconds
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeTip[] $tips
  */
 class RecipeStepResource extends JsonResource
@@ -21,10 +21,10 @@ class RecipeStepResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'step_number' => $this->stepNumber,
+            'step_number' => $this->step_number,
             'description' => $this->description,
-            'start_time_in_seconds' => $this->startTimeInSeconds,
-            'end_time_in_seconds' => $this->endTimeInSeconds,
+            'start_time_in_seconds' => $this->start_time_in_seconds,
+            'end_time_in_seconds' => $this->end_time_in_seconds,
             'tips' => RecipeTipResource::collection($this->tips),
         ];
     }
