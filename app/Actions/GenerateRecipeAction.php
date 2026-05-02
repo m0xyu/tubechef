@@ -36,12 +36,9 @@ class GenerateRecipeAction
      */
     public function execute(Video $video): Recipe
     {
-        if ($video->recipe()->exists()) {
-            $existing = $video->recipe;
-            if ($existing instanceof Recipe) {
-                return $existing;
-            }
-            throw new \RuntimeException('Recipe relation exists but is not a Recipe instance.');
+        $existing = $video->recipe;
+        if ($existing instanceof Recipe) {
+            return $existing;
         }
 
         try {

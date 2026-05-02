@@ -2,21 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\FetchChannelInfoAction;
-use App\Actions\FetchYouTubeMetadataAction;
 use App\Actions\GetVideoPreviewAction;
-use App\Actions\YouTubeMetadataStoreAction;
-use App\Dtos\YouTubeFullMetadataData;
-use App\Enums\Errors\VideoError;
+use App\Actions\StoreVideoWorkflowAction;
 use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\VideoException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VideoUrlRequest;
 use App\Http\Resources\VideoPreviewResource;
-use App\Jobs\GenerateRecipeJob;
 use App\Models\Video;
 use App\ValueObjects\YouTubeVideoId;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class VideoController extends Controller
@@ -44,17 +38,13 @@ class VideoController extends Controller
      * YouTube動画のメタデータを保存する
      *
      * @param VideoUrlRequest $request
-     * @param FetchYouTubeMetadataAction $fetchYouTubeMetadata
-     * @param YouTubeMetadataStoreAction $youTubeMetadataStore
-     * @param FetchChannelInfoAction $fetchChannelInfo
+     * @param StoreVideoWorkflowAction $storeVideoWorkflow
      * @return VideoPreviewResource
      * @throws VideoException
      */
     public function store(
         VideoUrlRequest $request,
-        FetchYouTubeMetadataAction $fetchYouTubeMetadata,
-        FetchChannelInfoAction $fetchChannelInfo,
-        YouTubeMetadataStoreAction $youTubeMetadataStore,
+        StoreVideoWorkflowAction $storeVideoWorkflow
     ): VideoPreviewResource {
         $user = $request->user();
         if (!$user) {
@@ -62,46 +52,8 @@ class VideoController extends Controller
         }
 
         $videoId = YouTubeVideoId::fromUrl($request->getVideoUrl());
-        $existingVideo = Video::where('video_id', (string)$videoId)->first();
 
-        if ($existingVideo) {
-            // 1. もうリトライの上限を超えてしまっている場合 → エラー
-            if ($existingVideo->hasExceededRetryLimit()) {
-                throw new VideoException(VideoError::MAX_RETRY_EXCEEDED);
-            }
-
-            // 2. すでに成功しているか、処理中の場合 → そのまま返す
-            if ($existingVideo->isGenerationProcessingOrCompleted()) {
-                return new VideoPreviewResource($existingVideo->load([
-                    'channel:id,name',
-                    'recipe:id,video_id,slug'
-                ]));
-            }
-        }
-
-        $videoData = $fetchYouTubeMetadata->execute(
-            $videoId,
-            FetchYouTubeMetadataAction::PARTS_FULL
-        );
-
-        $channelData = $fetchChannelInfo->execute($videoData->channelId);
-        $youtubeMetadata = new YouTubeFullMetadataData(
-            $videoData,
-            $channelData
-        );
-
-        $video = DB::transaction(function () use ($youTubeMetadataStore, $youtubeMetadata, $user) {
-            $video = $youTubeMetadataStore->execute($youtubeMetadata);
-
-            $video->update(['recipe_generation_status' => RecipeGenerationStatus::PROCESSING]);
-            $user->historyVideos()->syncWithoutDetaching([$video->id]);
-
-            DB::afterCommit(function () use ($video) {
-                GenerateRecipeJob::dispatch($video);
-            });
-
-            return $video;
-        });
+        $video = $storeVideoWorkflow->execute($videoId, $user);
 
         return (new VideoPreviewResource($video->load(
             'channel:id,name',
@@ -124,7 +76,6 @@ class VideoController extends Controller
             ->firstOrFail();
 
         if ($video->recipe_generation_status === RecipeGenerationStatus::COMPLETED) {
-            // N+1対策でロード
             $video->load('recipe');
 
             return response()->json([
