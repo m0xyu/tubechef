@@ -42,6 +42,11 @@ func main() {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	r.Head("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.Post("/generate", generateHandler.ServeHTTP)
 
 	// --- サーバー起動（Graceful Shutdown対応）---
@@ -72,4 +77,3 @@ func main() {
 	}
 	slog.Info("server stopped")
 }
-

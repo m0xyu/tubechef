@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
         $this->app->bind(LLMServiceInterface::class, function () {
             $baseUrlRaw = config('services.go_llm.base_url');
-            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : 'http://ai-recipe-service:3000';
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : 'http://localhost:3000';
             return new GoLLMService($baseUrl);
         });
     }

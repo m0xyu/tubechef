@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -104,9 +105,41 @@ func (c *Client) buildPayload(input domain.VideoInput) ([]byte, error) {
 
 // --- HTTP送信 ---
 
+const (
+	maxRetries     = 3
+	retryBaseDelay = 2 * time.Second
+)
+
 func (c *Client) post(ctx context.Context, body []byte) ([]byte, error) {
 	url := fmt.Sprintf("%s/v1beta/models/%s:generateContent?key=%s", c.baseURL, c.model, c.apiKey)
 
+	var lastErr error
+	for attempt := range maxRetries {
+		if attempt > 0 {
+			delay := retryBaseDelay * (1 << (attempt - 1)) // 2s, 4s
+			slog.Info("Gemini retry", "attempt", attempt+1, "delay", delay)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		raw, err := c.doPost(ctx, url, body)
+		if err == nil {
+			return raw, nil
+		}
+
+		if isRetryable(err) {
+			lastErr = err
+			continue
+		}
+		return nil, err
+	}
+	return nil, lastErr
+}
+
+func (c *Client) doPost(ctx context.Context, url string, body []byte) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -129,6 +162,10 @@ func (c *Client) post(ctx context.Context, body []byte) ([]byte, error) {
 	}
 
 	return raw, nil
+}
+
+func isRetryable(err error) bool {
+	return errors.Is(err, domain.ErrResourceExhausted) || errors.Is(err, domain.ErrUnavailable)
 }
 
 func mapHTTPError(status int, body []byte) error {

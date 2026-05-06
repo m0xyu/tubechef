@@ -23,7 +23,7 @@ func Load() (*Config, error) {
 		Port:          getEnv("PORT", "3000"),
 		GeminiAPIKey:  os.Getenv("GEMINI_API_KEY"),
 		GeminiBaseURL: getEnv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com"),
-		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
+		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 	}
 
 	if err := cfg.validate(); err != nil {

@@ -53,6 +53,6 @@ return [
     ],
 
     'go_llm' => [
-        'base_url' => env('GO_LLM_SERVICE_URL', 'http://ai-recipe-service:3000'),
+        'base_url' => env('GO_LLM_SERVICE_URL', 'http://localhost:3000'),
     ],
 ];
