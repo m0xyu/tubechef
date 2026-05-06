@@ -51,4 +51,8 @@ return [
         'flash_model' => env('GEMINI_FLASH_MODEL', 'gemini-2.5-flash'),
         'lite_model' => env('GEMINI_LITE_MODEL', 'gemini-2.5-flash_lite')
     ],
+
+    'go_llm' => [
+        'base_url' => env('GO_LLM_SERVICE_URL', 'http://ai-recipe-service:3000'),
+    ],
 ];

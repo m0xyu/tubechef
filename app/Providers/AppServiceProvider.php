@@ -6,7 +6,7 @@ use App\Infrastructure\Gemini\GeminiApiClient;
 use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\Repositories\Contracts\RecipeRepositoryInterface;
 use App\Repositories\RecipeRepository;
-use App\Services\LLM\GeminiService;
+use App\Services\LLM\GoLLMService;
 use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -45,7 +45,11 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
-        $this->app->bind(LLMServiceInterface::class, GeminiService::class);
+        $this->app->bind(LLMServiceInterface::class, function () {
+            $baseUrlRaw = config('services.go_llm.base_url');
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : 'http://ai-recipe-service:3000';
+            return new GoLLMService($baseUrl);
+        });
     }
 
     /**
