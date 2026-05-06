@@ -17,6 +17,7 @@ services:
             XDEBUG_MODE: "${SAIL_XDEBUG_MODE:-off}"
             XDEBUG_CONFIG: "${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}"
             IGNITION_LOCAL_SITES_PATH: "${PWD}"
+            GO_LLM_SERVICE_URL: "http://ai-recipe-service:3000"
         volumes:
             - ".:/var/www/html"
         networks:
@@ -24,9 +25,23 @@ services:
         depends_on:
             - mysql
             - redis
-            # - meilisearch
             - mailpit
-            # - selenium
+            - ai-recipe-service
+    ai-recipe-service:
+        build:
+            context: "./ai-recipe-service"
+            dockerfile: Dockerfile
+        ports:
+            - "${GO_LLM_PORT:-3000}:3000"
+        environment:
+            GEMINI_API_KEY: "${GEMINI_API_KEY}"
+            PORT: "3000"
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:3000/health"]
+            retries: 3
+            timeout: 5s
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
