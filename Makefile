@@ -37,6 +37,12 @@ go-lint:
 go-build:
 	@$(MAKE) -C ai-recipe-service build
 
+go-tidy:
+	@$(MAKE) -C ai-recipe-service tidy
+
+go-test: 
+	@$(MAKE) -C ai-recipe-service test
+
 # ===== 全体の一括処理（CI/CDで大活躍！） =====
 test-all: sail-test
 	@$(MAKE) -C ai-recipe-service test

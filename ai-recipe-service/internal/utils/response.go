@@ -74,7 +74,7 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	render.JSON(w, r, Response{
 		Success: false,
 		Message: message,
-		Error:   err.Error(), // 内部的なエラー内容もデバッグ用に含める（任意）
+		Error:   err.Error(),
 	})
 }
 
