@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\GenerateRecipeAction;
+use App\Dtos\LLMRequestData;
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Models\Recipe;
@@ -30,14 +31,14 @@ describe('GenerateRecipeActionTest', function () {
         $geminiResult = new \App\Dtos\LLMResponseData(
             data: $data,
             model: 'test-model',
-            usage: ['prompt_tokens' => 10, 'completion_tokens' => 20], // 具体的な数値
+            usage: ['prompt_tokens' => 10, 'completion_tokens' => 20],
             rawContent: json_encode($data)
         );
 
         $this->mock(LLMServiceInterface::class, function ($mock) use ($geminiResult) {
-            $mock->shouldReceive('generateStructured')
+            $mock->shouldReceive('generate')
                 ->once()
-                ->with(Mockery::any(), Mockery::type('array'), Mockery::type('string'), Mockery::type('string'))
+                ->with(Mockery::type(LLMRequestData::class))
                 ->andReturn($geminiResult);
         });
 
@@ -65,26 +66,19 @@ describe('GenerateRecipeActionTest', function () {
             'dish_slug' => 'curry',
         ];
 
-        $wrappedContent = [
-            'parts' => [
-                ['text' => json_encode($data)]
-            ]
-        ];
-
         $geminiResult = new \App\Dtos\LLMResponseData(
             data: $data,
             model: 'test-model',
             usage: ['token_count' => 10],
-            rawContent: json_encode($wrappedContent)
+            rawContent: json_encode($data)
         );
 
         $this->mock(LLMServiceInterface::class, function ($mock) use ($geminiResult) {
-            $mock->shouldReceive('generateStructured')
+            $mock->shouldReceive('generate')
                 ->once()
-                ->with(Mockery::any(), Mockery::type('array'), Mockery::type('string'), Mockery::type('string'))
+                ->with(Mockery::type(LLMRequestData::class))
                 ->andReturn($geminiResult);
         });
-
 
         $video = Video::factory()->create();
         $action = app(GenerateRecipeAction::class);
@@ -96,3 +90,4 @@ describe('GenerateRecipeActionTest', function () {
         }
     });
 });
+

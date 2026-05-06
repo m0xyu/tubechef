@@ -1,10 +1,10 @@
 <?php
 
 use App\Services\LLM\GeminiService;
+use App\Dtos\LLMRequestData;
 use App\Dtos\LLMResponseData;
 use App\Exceptions\GeminiException;
 use App\Infrastructure\Gemini\GeminiApiClient;
-use App\Services\LLM\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\Http;
 
 describe('GeminiService', function () {
@@ -16,6 +16,14 @@ describe('GeminiService', function () {
         );
 
         $this->service = new GeminiService($this->client);
+
+        $this->request = new LLMRequestData(
+            videoId: 'test123',
+            title: 'テスト料理動画',
+            description: '美味しいカレーの作り方',
+            duration: 600,
+            videoUrl: 'https://www.youtube.com/watch?v=test123',
+        );
     });
 
     test('valid structured response generates result data', function () {
@@ -55,12 +63,7 @@ describe('GeminiService', function () {
             'https://gemini.api.mock/*' => Http::response($mockResponse, 200),
         ]);
 
-        $result = $this->service->generateStructured(
-            'Prompt',
-            RecipeSchema::get(),
-            'Instruction',
-            'https://example.com/video.mp4'
-        );
+        $result = $this->service->generate($this->request);
 
         expect($result)->toBeInstanceOf(LLMResponseData::class);
 
@@ -82,7 +85,8 @@ describe('GeminiService', function () {
             ], 429),
         ]);
 
-        expect(fn() => $this->service->generateStructured('P', [], 'I', 'U'))
+        expect(fn() => $this->service->generate($this->request))
             ->toThrow(GeminiException::class);
     });
 });
+
