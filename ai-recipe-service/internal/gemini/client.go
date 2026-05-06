@@ -74,9 +74,14 @@ type systemInstructionP struct {
 	Parts []part `json:"parts"`
 }
 
+type thinkingConfig struct {
+	ThinkingBudget int `json:"thinkingBudget"`
+}
+
 type generationConfig struct {
-	ResponseMIMEType string         `json:"responseMimeType"`
+	ResponseMIMEType string        `json:"responseMimeType"`
 	ResponseSchema   responseSchema `json:"responseSchema"`
+	ThinkingConfig   thinkingConfig `json:"thinkingConfig"`
 }
 
 func (c *Client) buildPayload(input domain.VideoInput) ([]byte, error) {
@@ -97,6 +102,7 @@ func (c *Client) buildPayload(input domain.VideoInput) ([]byte, error) {
 		GenerationConfig: generationConfig{
 			ResponseMIMEType: "application/json",
 			ResponseSchema:   buildResponseSchema(),
+			ThinkingConfig:   thinkingConfig{ThinkingBudget: 0},
 		},
 	}
 
