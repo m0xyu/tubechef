@@ -26,6 +26,8 @@ enum VideoError: string
     #[ErrorDetails('動画が短すぎます。', 422)]
     case VIDEO_TOO_SHORT = 'video_too_short';
 
+    #[ErrorDetails('現在この動画の処理をリクエスト中です。', 409)]
+    case CONFLICT_REQUEST = 'conflict_request';
 
     // 共通系
     #[ErrorDetails('予期せぬエラーが発生しました。', 500)]

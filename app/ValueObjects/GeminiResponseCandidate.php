@@ -32,13 +32,26 @@ class GeminiResponseCandidate
      */
     public static function fromResponse(array $candidate, GeminiUsageMetadata $usage, string $modelVersion): self
     {
+        $contentRaw = $candidate['content'] ?? [];
+        /** @var array<string, mixed> $content */
+        $content = is_array($contentRaw) ? $contentRaw : [];
+
+        $finishReasonRaw = $candidate['finishReason'] ?? 'OTHER';
+        $finishReason = is_string($finishReasonRaw) ? $finishReasonRaw : 'OTHER';
+
+        $safetyRatingsRaw = $candidate['safetyRatings'] ?? [];
+        $safetyRatings = is_array($safetyRatingsRaw) ? $safetyRatingsRaw : [];
+
+        $finishMessageRaw = $candidate['finishMessage'] ?? null;
+        $finishMessage = is_string($finishMessageRaw) ? $finishMessageRaw : null;
+
         return new self(
-            content: $candidate['content'] ?? [],
-            finishReason: $candidate['finishReason'] ?? 'OTHER',
+            content: $content,
+            finishReason: $finishReason,
             usage: $usage,
             modelVersion: $modelVersion,
-            safetyRatings: $candidate['safetyRatings'] ?? [],
-            finishMessage: $candidate['finishMessage'] ?? null,
+            safetyRatings: $safetyRatings,
+            finishMessage: $finishMessage,
         );
     }
 

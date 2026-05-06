@@ -1,23 +1,21 @@
 <?php
 
 use App\Services\LLM\GeminiService;
-use App\Services\LLM\LLMServiceInterface;
-use App\Services\Schemas\RecipeSchema;
 use App\Dtos\LLMResponseData;
 use App\Exceptions\GeminiException;
+use App\Infrastructure\Gemini\GeminiApiClient;
+use App\Services\LLM\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Config;
 
 describe('GeminiService', function () {
     beforeEach(function () {
-        Config::set('services.gemini.api_key', 'test-key');
-        Config::set('services.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta/models/');
-        Config::set('services.gemini.model', 'gemini-test-model');
-    });
+        $this->client = new GeminiApiClient(
+            baseUrl: 'https://gemini.api.mock/',
+            apiKey: 'dummy',
+            model: 'gemini-2-flash'
+        );
 
-    test('it implements LLMServiceInterface', function () {
-        $service = new GeminiService();
-        expect($service)->toBeInstanceOf(LLMServiceInterface::class);
+        $this->service = new GeminiService($this->client);
     });
 
     test('valid structured response generates result data', function () {
@@ -50,16 +48,14 @@ describe('GeminiService', function () {
                 'candidatesTokenCount' => 50,
                 'totalTokenCount' => 150,
             ],
-            'modelVersion' => 'gemini-1.5-flash'
+            'modelVersion' => 'gemini-2-flash'
         ];
 
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response($mockResponse, 200),
+            'https://gemini.api.mock/*' => Http::response($mockResponse, 200),
         ]);
 
-        $service = new GeminiService();
-
-        $result = $service->generateStructured(
+        $result = $this->service->generateStructured(
             'Prompt',
             RecipeSchema::get(),
             'Instruction',
@@ -72,12 +68,12 @@ describe('GeminiService', function () {
         expect($data['title'])->toBe('Delicious Curry');
         expect($data['is_recipe'])->toBeTrue();
 
-        expect($result->model)->toBe('gemini-1.5-flash');
+        expect($result->model)->toBe('gemini-2-flash');
     });
 
     test('throws GeminiException on api failure', function () {
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response([
+            'https://gemini.api.mock/*' => Http::response([
                 'error' => [
                     'code' => 429,
                     'message' => 'Quota exceeded',
@@ -86,9 +82,7 @@ describe('GeminiService', function () {
             ], 429),
         ]);
 
-        $service = new GeminiService();
-
-        expect(fn() => $service->generateStructured('P', [], 'I', 'U'))
+        expect(fn() => $this->service->generateStructured('P', [], 'I', 'U'))
             ->toThrow(GeminiException::class);
     });
 });

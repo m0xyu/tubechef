@@ -23,7 +23,7 @@ class RecipeController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $page = (int) $request->get('page', 1);
+        $page = $request->integer('page', 1);
 
         $recipes = $this->recipeRepository->paginateForList($page);
 

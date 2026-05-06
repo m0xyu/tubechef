@@ -10,8 +10,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string $title
  * @property string $slug
  * @property string|null $summary
- * @property string|null $cookingTime
- * @property string|null $servingSize
+ * @property string|null $cooking_time
+ * @property string|null $serving_size
  * @property-read \App\Models\Video|null $video
  * @property-read \App\Models\Dish|null $dish
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeIngredient[] $ingredients
@@ -32,8 +32,8 @@ class RecipeResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'summary' => $this->summary,
-            'cooking_time' => $this->cookingTime,
-            'serving_size' => $this->servingSize,
+            'cooking_time' => $this->cooking_time,
+            'serving_size' => $this->serving_size,
             'ingredients' => RecipeIngredientResource::collection($this->ingredients),
             'steps' => RecipeStepResource::collection($this->steps),
             'tips' => RecipeTipResource::collection($this->tips),

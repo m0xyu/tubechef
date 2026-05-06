@@ -27,40 +27,61 @@ final readonly class GeneratedRecipeData
      */
     public static function fromArray(array $data): self
     {
+        $ingredientsRaw = is_array($data['ingredients'] ?? null) ? $data['ingredients'] : [];
+        $stepsRaw = is_array($data['steps'] ?? null) ? $data['steps'] : [];
+        $tipsRaw = is_array($data['tips'] ?? null) ? $data['tips'] : [];
+
+        $isRecipe = is_bool($data['is_recipe'] ?? null) ? $data['is_recipe'] : false;
+        $title = is_string($data['title'] ?? null) ? $data['title'] : '';
+        $summary = is_string($data['summary'] ?? null) ? $data['summary'] : '';
+        $dishName = is_string($data['dish_name'] ?? null) ? $data['dish_name'] : '';
+        $dishSlug = is_string($data['dish_slug'] ?? null) ? $data['dish_slug'] : '';
+        $servingSize = is_string($data['serving_size'] ?? null) ? $data['serving_size'] : null;
+        $cookingTime = is_string($data['cooking_time'] ?? null) ? $data['cooking_time'] : null;
+
         return new self(
-            isRecipe: (bool) ($data['is_recipe'] ?? false),
-            title: (string) ($data['title'] ?? ''),
-            summary: (string) ($data['summary'] ?? ''),
-            dishName: (string) ($data['dish_name'] ?? ''),
-            dishSlug: (string) ($data['dish_slug'] ?? ''),
+            isRecipe: $isRecipe,
+            title: $title,
+            summary: $summary,
+            dishName: $dishName,
+            dishSlug: $dishSlug,
             ingredients: array_map(
-                fn(array $i) => new IngredientData(
-                    name: $i['name'],
-                    quantity: $i['quantity'] ?? null,
-                    group: $i['group'] ?? null,
-                    order: (int) ($i['order'] ?? 0)
-                ),
-                $data['ingredients'] ?? []
+                function (mixed $i): IngredientData {
+                    $item = is_array($i) ? $i : [];
+                    return new IngredientData(
+                        name: is_string($item['name'] ?? null) ? $item['name'] : '',
+                        quantity: is_string($item['quantity'] ?? null) ? $item['quantity'] : null,
+                        group: is_string($item['group'] ?? null) ? $item['group'] : null,
+                        order: is_numeric($item['order'] ?? null) ? (int) $item['order'] : 0
+                    );
+                },
+                $ingredientsRaw
             ),
             steps: array_map(
-                fn(array $s) => new RecipeStepData(
-                    stepNumber: (int) $s['step_number'],
-                    description: $s['description'],
-                    startTimeInSeconds: isset($s['start_time_in_seconds']) ? (int) $s['start_time_in_seconds'] : null,
-                    endTimeInSeconds: isset($s['end_time_in_seconds']) ? (int) $s['end_time_in_seconds'] : null
-                ),
-                $data['steps'] ?? []
+                function (mixed $s): RecipeStepData {
+                    $item = is_array($s) ? $s : [];
+                    return new RecipeStepData(
+                        stepNumber: is_numeric($item['step_number'] ?? null) ? (int) $item['step_number'] : 0,
+                        description: is_string($item['description'] ?? null) ? $item['description'] : '',
+                        startTimeInSeconds: is_numeric($item['start_time_in_seconds'] ?? null) ? (int) $item['start_time_in_seconds'] : null,
+                        endTimeInSeconds: is_numeric($item['end_time_in_seconds'] ?? null) ? (int) $item['end_time_in_seconds'] : null
+                    );
+                },
+                $stepsRaw
             ),
             tips: array_map(
-                fn(array $t) => new RecipeTipData(
-                    description: $t['description'],
-                    relatedStepNumber: isset($t['related_step_number']) ? (int) $t['related_step_number'] : null,
-                    startTimeInSeconds: isset($t['start_time_in_seconds']) ? (int) $t['start_time_in_seconds'] : null
-                ),
-                $data['tips'] ?? []
+                function (mixed $t): RecipeTipData {
+                    $item = is_array($t) ? $t : [];
+                    return new RecipeTipData(
+                        description: is_string($item['description'] ?? null) ? $item['description'] : '',
+                        relatedStepNumber: is_numeric($item['related_step_number'] ?? null) ? (int) $item['related_step_number'] : null,
+                        startTimeInSeconds: is_numeric($item['start_time_in_seconds'] ?? null) ? (int) $item['start_time_in_seconds'] : null
+                    );
+                },
+                $tipsRaw
             ),
-            servingSize: $data['serving_size'] ?? null,
-            cookingTime: $data['cooking_time'] ?? null,
+            servingSize: $servingSize,
+            cookingTime: $cookingTime,
         );
     }
 }

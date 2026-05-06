@@ -9,12 +9,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property int $id
  * @property string $title
  * @property string $slug
- * @property string $thumbnailUrl
- * @property int|null $cookingTime
- * @property string $channelName
- * @property string|null $dishName
+ * @property string $thumbnail_url
+ * @property int|null $cooking_time
+ * @property string $channel_name
+ * @property string|null $dish_name
  * @property \App\Models\Video|null $video
  * @property DishResource|null $dish
+ * 
  */
 class RecipeListResource extends JsonResource
 {
@@ -29,11 +30,11 @@ class RecipeListResource extends JsonResource
             'id'            => $this->id,
             'title'         => $this->title,
             'slug'          => $this->slug,
-            'thumbnail_url' => $this->thumbnailUrl,
-            'cooking_time'  => $this->cookingTime,
-            'channel_name'  => $this->channelName,
+            'thumbnail_url' => $this->video?->thumbnail_url,
+            'cooking_time'  => $this->cooking_time,
+            'channel_name'  => $this->video?->channel?->name,
             'dish' => [
-                'name' => $this->dishName,
+                'name' => $this->dish?->name,
             ],
         ];
     }

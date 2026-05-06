@@ -6,8 +6,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property string $description
- * @property int|null $relatedStepNumber
- * @property int|null $startTimeInSeconds
+ * @property int|null $related_step_number
+ * @property int|null $start_time_in_seconds
  * 
  */
 class RecipeTipResource extends JsonResource
@@ -21,8 +21,8 @@ class RecipeTipResource extends JsonResource
     {
         return [
             'description' => $this->description,
-            'related_step' => $this->relatedStepNumber,
-            'start_time_in_seconds' => $this->startTimeInSeconds,
+            'related_step' => $this->related_step_number,
+            'start_time_in_seconds' => $this->start_time_in_seconds,
         ];
     }
 }

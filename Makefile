@@ -1,5 +1,3 @@
-.PHONY: help build run dev lint migrate-up migrate-down docs-generate
-
 help:
 	@echo "Available commands:"
 	@echo "make sail-up                - Start Laravel Sail"
