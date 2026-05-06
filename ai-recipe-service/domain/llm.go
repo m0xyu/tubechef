@@ -1,39 +1,42 @@
 package domain
 
-type LLMResponse struct {
-	Data       *GenerateRecipeResponse
-	Model      string
-	Metadata   LLMMetadata
-	RawContent string
+import "context"
+
+// LLMClient はLLMプロバイダーの抽象（実装はinternalに置く）
+type LLMClient interface {
+	GenerateRecipe(ctx context.Context, input VideoInput) (*LLMResult, error)
 }
 
+// LLMResult はレシピデータとメタ情報をまとめたレスポンス
+type LLMResult struct {
+	Recipe   *GeneratedRecipe
+	Metadata LLMMetadata
+}
+
+// LLMMetadata は Gemini の usageMetadata + modelVersion に対応
+// https://ai.google.dev/api/generate-content#v1beta.UsageMetadata
 type LLMMetadata struct {
-	ModelVersion  string       `json:"model_version"`
-	FinishReason  string       `json:"finish_reason"`
-	Tokens        UsageDetails `json:"tokens"`
-	SafetyRatings []any        `json:"safety_ratings"`
-	EvaluatedAt   string       `json:"evaluated_at"`
-	FinishMessage *string      `json:"finish_message"`
+	ModelVersion  string
+	FinishReason  string
+	FinishMessage string
+	UsageMetadata UsageMetadata
 }
 
-type UsageDetails struct {
-	Total     int              `json:"total"`
-	Thoughts  int              `json:"thoughts"`
-	Breakdown BreakdownByPhase `json:"breakdown"`
+type UsageMetadata struct {
+	PromptTokenCount           int                  `json:"prompt_token_count"`
+	CachedContentTokenCount    int                  `json:"cached_content_token_count"`
+	CandidatesTokenCount       int                  `json:"candidates_token_count"`
+	ToolUsePromptTokenCount    int                  `json:"tool_use_prompt_token_count"`
+	ThoughtsTokenCount         int                  `json:"thoughts_token_count"`
+	TotalTokenCount            int                  `json:"total_token_count"`
+	PromptTokensDetails        []ModalityTokenCount `json:"prompt_tokens_details"`
+	CacheTokensDetails         []ModalityTokenCount `json:"cache_tokens_details"`
+	CandidatesTokensDetails    []ModalityTokenCount `json:"candidates_tokens_details"`
+	ToolUsePromptTokensDetails []ModalityTokenCount `json:"tool_use_prompt_tokens_details"`
 }
 
-type BreakdownByPhase struct {
-	Prompt     ModalityCount `json:"prompt"`
-	Cache      ModalityCount `json:"cache"`
-	Candidates ModalityCount `json:"candidates"`
-	ToolUse    ModalityCount `json:"tool_use"`
-}
-
-type ModalityCount struct {
-	Total int `json:"total"`
-	Text  int `json:"text"`
-	Video int `json:"video"`
-	Audio int `json:"audio"`
-	Image int `json:"image"`
-	Doc   int `json:"doc"`
+// ModalityTokenCount はモダリティ（テキスト・画像・音声など）ごとのトークン内訳
+type ModalityTokenCount struct {
+	Modality   string `json:"modality"`
+	TokenCount int    `json:"token_count"`
 }
