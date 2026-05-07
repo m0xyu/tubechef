@@ -36,8 +36,8 @@ class GeminiResponseCandidate
         /** @var array<string, mixed> $content */
         $content = is_array($contentRaw) ? $contentRaw : [];
 
-        $finishReasonRaw = $candidate['finishReason'] ?? 'OTHER';
-        $finishReason = is_string($finishReasonRaw) ? $finishReasonRaw : 'OTHER';
+        $finishReasonRaw = $candidate['finishReason'] ?? 'FINISH_REASON_UNSPECIFIED';
+        $finishReason = is_string($finishReasonRaw) ? $finishReasonRaw : 'FINISH_REASON_UNSPECIFIED';
 
         $safetyRatingsRaw = $candidate['safetyRatings'] ?? [];
         $safetyRatings = is_array($safetyRatingsRaw) ? $safetyRatingsRaw : [];
@@ -71,12 +71,9 @@ class GeminiResponseCandidate
     public function toMetadataArray(): array
     {
         return [
-            'model_version'  => $this->modelVersion,
-            'finish_reason'  => $this->finishReason,
-            'tokens'         => $this->usage->toArray(),
-            'safety_ratings' => $this->safetyRatings,
-            'evaluated_at'   => now()->toDateTimeString(),
-            'finish_message' => $this->finishMessage,
+            'model_version' => $this->modelVersion,
+            'finish_reason' => $this->finishReason,
+            'usage'         => $this->usage->toArray(),
         ];
     }
 
@@ -86,7 +83,9 @@ class GeminiResponseCandidate
     public function getFailureContext(): array
     {
         return array_merge($this->toMetadataArray(), [
-            'content_empty' => empty($this->content),
+            'content_empty'  => empty($this->content),
+            'safety_ratings' => $this->safetyRatings,
+            'finish_message' => $this->finishMessage,
         ]);
     }
 }

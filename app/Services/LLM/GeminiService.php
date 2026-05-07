@@ -2,11 +2,14 @@
 
 namespace App\Services\LLM;
 
+use App\Dtos\LLMRequestData;
 use App\Dtos\LLMResponseData;
 use App\Enums\Errors\GeminiError;
 use App\Exceptions\GeminiException;
 use App\Infrastructure\Gemini\GeminiApiClient;
 use App\Services\LLM\LLMServiceInterface;
+use App\Services\LLM\Prompts\RecipePrompt;
+use App\Services\LLM\Schemas\RecipeSchema;
 use App\ValueObjects\GeminiResponseCandidate;
 use App\ValueObjects\GeminiUsageMetadata;
 use Illuminate\Support\Facades\Log;
@@ -17,25 +20,16 @@ class GeminiService implements LLMServiceInterface
         private readonly GeminiApiClient $apiClient
     ) {}
 
-    /**
-     * スキーマに基づいた構造化データを生成する
-     * @param string $prompt
-     * @param array<mixed> $schema
-     * @param string $systemInstruction
-     * @param string $videoUrl
-     * @return LLMResponseData
-     */
-    public function generateStructured(
-        string $prompt,
-        array $schema,
-        string $systemInstruction,
-        string $videoUrl
-    ): LLMResponseData {
-        $payload = $this->buildPayload($prompt, $schema, $systemInstruction, $videoUrl);
+    public function generate(LLMRequestData $request): LLMResponseData
+    {
+        $prompt = RecipePrompt::buildFromRequest($request);
+        $schema = RecipeSchema::get();
+        $systemInstruction = RecipePrompt::systemInstruction();
 
+        $payload = $this->buildPayload($prompt, $schema, $systemInstruction, $request->videoUrl);
         $responseArray = $this->apiClient->post($payload);
 
-        return $this->processResponse($responseArray, $videoUrl);
+        return $this->processResponse($responseArray, $request->videoUrl);
     }
 
     /**
@@ -88,9 +82,8 @@ class GeminiService implements LLMServiceInterface
         $usage = GeminiUsageMetadata::fromArray($usageData);
         $candidate = GeminiResponseCandidate::fromResponse($candidateData, $usage, $modelVersion);
 
-        $usageArray = $candidate->toMetadataArray();
+        $metadata = $candidate->toMetadataArray();
 
-        // Gemini側での生成停止確認
         if (!$candidate->isSuccessful()) {
             Log::warning("Gemini generation stopped: {$candidate->finishReason}", $candidate->getFailureContext());
             throw new GeminiException(GeminiError::INTERNAL_ERROR);
@@ -106,7 +99,6 @@ class GeminiService implements LLMServiceInterface
         $textRaw = is_array($firstPart) ? ($firstPart['text'] ?? '') : '';
         $text = is_string($textRaw) ? $textRaw : '';
 
-        // JSONパースとエラーハンドリング
         $decoded = json_decode($text, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -124,7 +116,7 @@ class GeminiService implements LLMServiceInterface
         return new LLMResponseData(
             data: $data,
             model: $modelVersion,
-            usage: $usageArray,
+            metadata: $metadata,
             rawContent: $text
         );
     }

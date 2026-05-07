@@ -10,7 +10,7 @@ class VideoMetadataUpdateAction
      * AI生成に関連するメタデータを一括更新する
      * 
      * @param \App\Models\Video $video
-     * @param array<string> $metadata
+     * @param array<string, mixed> $metadata
      * @return void
      */
     public function execute(Video $video, array $metadata): void

@@ -3,14 +3,13 @@
 namespace App\Actions;
 
 use App\Dtos\GeneratedRecipeData;
+use App\Dtos\LLMRequestData;
 use App\Enums\Errors\RecipeError;
 use App\Exceptions\RecipeException;
 use App\Models\Recipe;
 use App\Models\Video;
 use App\Services\LLM\LLMServiceInterface;
-use App\Services\LLM\Prompts\RecipePrompt;
 use App\Services\RecipeService;
-use App\Services\LLM\Schemas\RecipeSchema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -42,24 +41,17 @@ class GenerateRecipeAction
         }
 
         try {
-            $result = $this->llmService->generateStructured(
-                RecipePrompt::build($video),
-                RecipeSchema::get(),
-                RecipePrompt::systemInstruction(),
-                $video->url
-            );
-            Log::info("Gemini生成成功: VideoID {$video->id}");
+            $result = $this->llmService->generate(LLMRequestData::fromVideo($video));
+            Log::info("LLM生成成功: VideoID {$video->id}");
         } catch (Throwable $e) {
-            Log::error("Gemini生成エラー: VideoID {$video->id}", ['error' => $e->getMessage()]);
+            Log::error("LLM生成エラー: VideoID {$video->id}", ['error' => $e->getMessage()]);
             throw new RecipeException(RecipeError::GENERATION_FAILED, previous: $e);
         }
 
         $recipeData = GeneratedRecipeData::fromArray($result->data);
-        /** @var array<string, string> $metadataForUpdate */
-        $metadataForUpdate = collect($result->usage)
-            ->filter(fn($value) => is_scalar($value))
-            ->map(fn($value) => (string) $value)
-            ->toArray();
+        $metadataForUpdate = array_merge($result->metadata, [
+            'evaluated_at' => now()->toDateTimeString(),
+        ]);
 
         if (!$recipeData->isRecipe) {
             $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);

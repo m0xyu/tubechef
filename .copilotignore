@@ -1,0 +1,5 @@
+# .copilotignore
+.env
+.env.*
+*.log
+node_modules/

@@ -8,7 +8,6 @@ use App\Http\Resources\RecipeResource;
 use App\Repositories\Contracts\RecipeRepositoryInterface;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class RecipeController extends Controller
 {
@@ -38,7 +37,6 @@ class RecipeController extends Controller
     public function show(string $slug): RecipeResource
     {
         $data = $this->recipeRepository->findBySlugOrFail($slug);
-        Log::info('Recipe data retrieved', ['slug' => $slug, 'data' => $data]);
 
         return new RecipeResource($data);
     }

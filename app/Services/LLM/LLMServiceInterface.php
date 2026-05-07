@@ -2,18 +2,13 @@
 
 namespace App\Services\LLM;
 
+use App\Dtos\LLMRequestData;
 use App\Dtos\LLMResponseData;
 
 interface LLMServiceInterface
 {
     /**
-     * スキーマに基づいた構造化データを生成する
-     *
-     * @param string $prompt
-     * @param array<string, mixed> $schema
-     * @param string $systemInstruction
-     * @param string $videoUrl
-     * @return LLMResponseData
+     * 動画情報からレシピを生成する
      */
-    public function generateStructured(string $prompt, array $schema, string $systemInstruction, string $videoUrl): LLMResponseData;
+    public function generate(LLMRequestData $request): LLMResponseData;
 }

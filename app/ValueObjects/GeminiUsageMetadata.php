@@ -83,38 +83,21 @@ class GeminiUsageMetadata
     }
 
     /**
-     * DB保存用またはAPIレスポンス用の配列に変換
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return [
-            'total'    => $this->totalTokenCount,
-            'thoughts' => $this->thoughtsTokenCount,
-            'breakdown' => [
-                'prompt'     => $this->formatPhase($this->promptTokenCount, $this->promptDetails),
-                'cache'      => $this->formatPhase($this->cachedContentTokenCount, $this->cacheDetails),
-                'candidates' => $this->formatPhase($this->candidatesTokenCount, $this->candidatesDetails),
-                'tool_use'   => $this->formatPhase($this->toolUsePromptTokenCount, $this->toolUseDetails),
-            ],
-        ];
-    }
-
-    /**
-     * フェーズごとの詳細を整形
-     * @param int $total
-     * @param array<int, array<string, mixed>> $details
-     * @return array<string, int>
-     */
-    private function formatPhase(int $total, array $details): array
-    {
-        return [
-            'total' => $total,
-            'text'  => $this->getModalityCount($details, 'TEXT'),
-            'video' => $this->getModalityCount($details, 'VIDEO'),
-            'audio' => $this->getModalityCount($details, 'AUDIO'),
-            'image' => $this->getModalityCount($details, 'IMAGE'),
-            'doc'   => $this->getModalityCount($details, 'DOCUMENT'),
+            'prompt_token_count'             => $this->promptTokenCount,
+            'cached_content_token_count'     => $this->cachedContentTokenCount,
+            'candidates_token_count'         => $this->candidatesTokenCount,
+            'tool_use_prompt_token_count'    => $this->toolUsePromptTokenCount,
+            'thoughts_token_count'           => $this->thoughtsTokenCount,
+            'total_token_count'              => $this->totalTokenCount,
+            'prompt_tokens_details'          => $this->promptDetails,
+            'cache_tokens_details'           => $this->cacheDetails,
+            'candidates_tokens_details'      => $this->candidatesDetails,
+            'tool_use_prompt_tokens_details' => $this->toolUseDetails,
         ];
     }
 }
