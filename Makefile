@@ -1,3 +1,5 @@
+.PHONY: help sail-up sail-down stan sail-test sail-test-coverage go-run go-lint go-build go-tidy go-test test-all prod-build prod-up prod-down prod-migrate prod-optimize prod-deploy prod-bash
+
 help:
 	@echo "Available commands:"
 	@echo "make sail-up                - Start Laravel Sail"
@@ -6,6 +8,19 @@ help:
 	@echo "make sail-test              - Run tests with Laravel Sail"
 	@echo "make sail-test-coverage     - Run tests with coverage using Laravel Sail"
 	@echo "make sail-test-coverage-html - Run tests with HTML coverage report using Laravel Sail"
+	@echo "make go-run                 - Run the Go API server"
+	@echo "make go-lint                - Run Go linters"
+	@echo "make go-build               - Build the Go API server"
+	@echo "make go-tidy                - Tidy Go modules"
+	@echo "make go-test                - Run Go tests"
+	@echo "make test-all               - Run all tests (PHP and Go)"
+	@echo "make prod-build             - Build production containers"
+	@echo "make prod-up                - Start production environment"
+	@echo "make prod-down              - Stop production environment"
+	@echo "make prod-migrate           - Run database migrations for production"
+	@echo "make prod-optimize          - Optimize Laravel for production"
+	@echo "make prod-deploy            - Build and deploy to production"
+	@echo "make prod-bash              - Open a bash shell in the production container"
 
 sail-up:
 	@echo "Starting Laravel Sail..."
@@ -43,6 +58,33 @@ go-tidy:
 go-test: 
 	@$(MAKE) -C ai-recipe-service test
 
-# ===== 全体の一括処理（CI/CDで大活躍！） =====
+# ===== 全体の一括処理 =====
 test-all: sail-test
 	@$(MAKE) -C ai-recipe-service test
+
+# ===== Production (本番環境用) =====
+prod-build:
+	@echo "Building production containers..."
+	@docker compose -f docker-compose.prod.yml build
+
+prod-up:
+	@echo "Starting production environment..."
+	@docker compose -f docker-compose.prod.yml up -d
+
+prod-down:
+	@echo "Stopping production environment..."
+	@docker compose -f docker-compose.prod.yml down
+
+prod-migrate:
+	@echo "Running database migrations for production..."
+	@docker compose -f docker-compose.prod.yml exec tubechef-app php artisan migrate --force
+
+prod-optimize:
+	@echo "Optimizing Laravel for production (caching config, routes, views)..."
+	@docker compose -f docker-compose.prod.yml exec tubechef-app php artisan optimize
+
+prod-deploy: prod-build prod-up prod-migrate prod-optimize
+	@echo "🚀 Deployment completed successfully!"
+
+prod-bash:
+	@docker compose -f docker-compose.prod.yml exec tubechef-app bash

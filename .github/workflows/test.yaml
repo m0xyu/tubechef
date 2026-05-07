@@ -2,9 +2,9 @@ name: Run Tests
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: ["main", "develop"]
+    branches: [ "main", "develop" ]
 
 jobs:
   laravel-tests:
@@ -19,10 +19,8 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd="mysqladmin ping" --health-interval=10s
+          --health-timeout=5s --health-retries=3
 
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +30,8 @@ jobs:
         with:
           php-version: "8.4"
           # ここに 'mbstring' などが含まれているのはGoodです
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, fileinfo
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath,
+            intl, fileinfo
           coverage: none
           # 【追加】これを入れるだけでComposerのインストールが劇的に速くなります
           tools: composer:v2
@@ -52,7 +51,8 @@ jobs:
         run: cp .env.example .env
 
       - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress
+          --prefer-dist
 
       - name: Generate Key
         run: php artisan key:generate
@@ -81,4 +81,4 @@ jobs:
           DB_DATABASE: laravel_test
           DB_USERNAME: root
           DB_PASSWORD: password
-        run: php artisan test
+        run: make test
