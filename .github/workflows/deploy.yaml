@@ -20,7 +20,7 @@ jobs:
                   port: ${{ secrets.VPS_PORT }}
 
                   script: |
-                      cd /var/www/tubechef
+                      cd /home/m0xyu/var/www/tubechef
 
                       git fetch origin
                       git checkout production
