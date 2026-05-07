@@ -24,7 +24,7 @@ services:
     tubechef-worker:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: Dockerfile.prod
         restart: always
         entrypoint: [ "php", "/var/www/html/artisan", "queue:work" ]
         command: [ "--tries=3", "--memory=128", "--timeout=60" ]
