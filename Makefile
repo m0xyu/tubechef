@@ -82,7 +82,11 @@ prod-optimize:
 	@echo "Optimizing Laravel for production (caching config, routes, views)..."
 	@docker compose -f docker-compose.prod.yml exec tubechef-app php artisan optimize
 
-prod-deploy: prod-build prod-up prod-migrate prod-optimize
+prod-deploy: prod-build prod-up
+	@echo "⏳ Waiting for MySQL to initialize..."
+	@sleep 15
+	@$(MAKE) prod-migrate
+	@$(MAKE) prod-optimize
 	@echo "🚀 Deployment completed successfully!"
 
 prod-bash:
