@@ -49,11 +49,9 @@ class GenerateRecipeAction
         }
 
         $recipeData = GeneratedRecipeData::fromArray($result->data);
-        /** @var array<string, string> $metadataForUpdate */
-        $metadataForUpdate = collect($result->usage)
-            ->filter(fn($value) => is_scalar($value))
-            ->map(fn($value) => (string) $value)
-            ->toArray();
+        $metadataForUpdate = array_merge($result->metadata, [
+            'evaluated_at' => now()->toDateTimeString(),
+        ]);
 
         if (!$recipeData->isRecipe) {
             $this->videoMetadataUpdateAction->execute($video, $metadataForUpdate);

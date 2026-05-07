@@ -31,7 +31,7 @@ describe('GenerateRecipeActionTest', function () {
         $geminiResult = new \App\Dtos\LLMResponseData(
             data: $data,
             model: 'test-model',
-            usage: ['prompt_tokens' => 10, 'completion_tokens' => 20],
+            metadata: ['model_version' => 'test-model', 'finish_reason' => 'STOP', 'usage' => []],
             rawContent: json_encode($data)
         );
 
@@ -69,7 +69,7 @@ describe('GenerateRecipeActionTest', function () {
         $geminiResult = new \App\Dtos\LLMResponseData(
             data: $data,
             model: 'test-model',
-            usage: ['token_count' => 10],
+            metadata: ['model_version' => 'test-model', 'finish_reason' => 'STOP', 'usage' => []],
             rawContent: json_encode($data)
         );
 

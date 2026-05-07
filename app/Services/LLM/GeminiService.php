@@ -82,7 +82,7 @@ class GeminiService implements LLMServiceInterface
         $usage = GeminiUsageMetadata::fromArray($usageData);
         $candidate = GeminiResponseCandidate::fromResponse($candidateData, $usage, $modelVersion);
 
-        $usageArray = $candidate->toMetadataArray();
+        $metadata = $candidate->toMetadataArray();
 
         if (!$candidate->isSuccessful()) {
             Log::warning("Gemini generation stopped: {$candidate->finishReason}", $candidate->getFailureContext());
@@ -116,7 +116,7 @@ class GeminiService implements LLMServiceInterface
         return new LLMResponseData(
             data: $data,
             model: $modelVersion,
-            usage: $usageArray,
+            metadata: $metadata,
             rawContent: $text
         );
     }

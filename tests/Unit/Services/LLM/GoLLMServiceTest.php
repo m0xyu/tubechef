@@ -59,7 +59,8 @@ describe('GoLLMService', function () {
         expect($result->data['is_recipe'])->toBeTrue();
         expect($result->data['title'])->toBe('鶏の唐揚げ');
         expect($result->model)->toBe('gemini-2.5-flash');
-        expect($result->usage['total_token_count'])->toBe(300);
+        expect($result->metadata['finish_reason'])->toBe('STOP');
+        expect($result->metadata['usage']['total_token_count'])->toBe(300);
     });
 
     test('Goサービスがエラーを返した場合RecipeExceptionをスローする', function () {

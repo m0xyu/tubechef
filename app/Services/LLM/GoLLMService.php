@@ -48,15 +48,20 @@ class GoLLMService implements LLMServiceInterface
         /** @var array<string, mixed> $metadata */
         $metadata = is_array($data['metadata'] ?? null) ? $data['metadata'] : [];
 
-        /** @var array<string, mixed> $usage */
-        $usage = is_array($metadata['usage'] ?? null) ? $metadata['usage'] : [];
-
         $modelVersion = is_string($metadata['model_version'] ?? null) ? $metadata['model_version'] : 'unknown';
+        $finishReason = is_string($metadata['finish_reason'] ?? null) ? $metadata['finish_reason'] : 'FINISH_REASON_UNSPECIFIED';
+
+        /** @var array<string, mixed> $usageData */
+        $usageData = is_array($metadata['usage'] ?? null) ? $metadata['usage'] : [];
 
         return new LLMResponseData(
             data: $recipe,
             model: $modelVersion,
-            usage: $usage,
+            metadata: [
+                'model_version' => $modelVersion,
+                'finish_reason' => $finishReason,
+                'usage'         => $usageData,
+            ],
         );
     }
 }

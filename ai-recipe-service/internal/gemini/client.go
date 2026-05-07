@@ -79,7 +79,7 @@ type thinkingConfig struct {
 }
 
 type generationConfig struct {
-	ResponseMIMEType string        `json:"responseMimeType"`
+	ResponseMIMEType string         `json:"responseMimeType"`
 	ResponseSchema   responseSchema `json:"responseSchema"`
 	ThinkingConfig   thinkingConfig `json:"thinkingConfig"`
 }
