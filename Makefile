@@ -1,13 +1,12 @@
-.PHONY: help sail-up sail-down stan sail-test sail-test-coverage go-run go-lint go-build go-tidy go-test test-all prod-build prod-up prod-down prod-migrate prod-optimize prod-deploy prod-bash
+.PHONY: help sail-up sail-down stan test test-coverage go-run go-lint go-build go-tidy go-test test-all prod-build prod-up prod-down prod-migrate prod-optimize prod-deploy prod-bash
 
 help:
 	@echo "Available commands:"
 	@echo "make sail-up                - Start Laravel Sail"
 	@echo "make sail-down              - Stop Laravel Sail"
 	@echo "make stan                   - Run PHPStan static analysis"
-	@echo "make sail-test              - Run tests with Laravel Sail"
-	@echo "make sail-test-coverage     - Run tests with coverage using Laravel Sail"
-	@echo "make sail-test-coverage-html - Run tests with HTML coverage report using Laravel Sail"
+	@echo "make test              - Run tests with Laravel Sail"
+	@echo "make test-coverage     - Run tests with coverage using Laravel Sail"
 	@echo "make go-run                 - Run the Go API server"
 	@echo "make go-lint                - Run Go linters"
 	@echo "make go-build               - Build the Go API server"
@@ -34,13 +33,13 @@ stan:
 	@echo "Running PHPStan..."
 	@./vendor/bin/phpstan analyse -l max --memory-limit=2G
 
-sail-test:
+test:
 	@echo "Running tests with Laravel Sail..."
-	@./vendor/bin/sail artisan test
+	@php artisan test
 
-sail-test-coverage:
+test-coverage:
 	@echo "Running tests with coverage using Laravel Sail..."
-	@./vendor/bin/sail artisan test --coverage
+	@php artisan test --coverage
 
 # ===== Goの処理（子Makefileへ委譲！） =====
 go-run:
@@ -59,7 +58,7 @@ go-test:
 	@$(MAKE) -C ai-recipe-service test
 
 # ===== 全体の一括処理 =====
-test-all: sail-test
+test-all: test
 	@$(MAKE) -C ai-recipe-service test
 
 # ===== Production (本番環境用) =====
