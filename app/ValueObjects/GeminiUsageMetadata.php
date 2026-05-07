@@ -38,17 +38,29 @@ class GeminiUsageMetadata
      */
     public static function fromArray(array $data): self
     {
+        /** @var array<int, array<string, mixed>> $promptDetails */
+        $promptDetails = is_array($data['promptTokensDetails'] ?? null) ? $data['promptTokensDetails'] : [];
+
+        /** @var array<int, array<string, mixed>> $cacheDetails */
+        $cacheDetails = is_array($data['cacheTokensDetails'] ?? null) ? $data['cacheTokensDetails'] : [];
+
+        /** @var array<int, array<string, mixed>> $candidatesDetails */
+        $candidatesDetails = is_array($data['candidatesTokensDetails'] ?? null) ? $data['candidatesTokensDetails'] : [];
+
+        /** @var array<int, array<string, mixed>> $toolUseDetails */
+        $toolUseDetails = is_array($data['toolUsePromptTokensDetails'] ?? null) ? $data['toolUsePromptTokensDetails'] : [];
+
         return new self(
-            totalTokenCount: $data['totalTokenCount'] ?? 0,
-            promptTokenCount: $data['promptTokenCount'] ?? 0,
-            candidatesTokenCount: $data['candidatesTokenCount'] ?? 0,
-            cachedContentTokenCount: $data['cachedContentTokenCount'] ?? 0,
-            toolUsePromptTokenCount: $data['toolUsePromptTokenCount'] ?? 0,
-            thoughtsTokenCount: $data['thoughtsTokenCount'] ?? 0,
-            promptDetails: $data['promptTokensDetails'] ?? [],
-            cacheDetails: $data['cacheTokensDetails'] ?? [],
-            candidatesDetails: $data['candidatesTokensDetails'] ?? [],
-            toolUseDetails: $data['toolUsePromptTokensDetails'] ?? [],
+            totalTokenCount: is_numeric($data['totalTokenCount'] ?? null) ? (int) $data['totalTokenCount'] : 0,
+            promptTokenCount: is_numeric($data['promptTokenCount'] ?? null) ? (int) $data['promptTokenCount'] : 0,
+            candidatesTokenCount: is_numeric($data['candidatesTokenCount'] ?? null) ? (int) $data['candidatesTokenCount'] : 0,
+            cachedContentTokenCount: is_numeric($data['cachedContentTokenCount'] ?? null) ? (int) $data['cachedContentTokenCount'] : 0,
+            toolUsePromptTokenCount: is_numeric($data['toolUsePromptTokenCount'] ?? null) ? (int) $data['toolUsePromptTokenCount'] : 0,
+            thoughtsTokenCount: is_numeric($data['thoughtsTokenCount'] ?? null) ? (int) $data['thoughtsTokenCount'] : 0,
+            promptDetails: $promptDetails,
+            cacheDetails: $cacheDetails,
+            candidatesDetails: $candidatesDetails,
+            toolUseDetails: $toolUseDetails,
         );
     }
 
@@ -61,42 +73,31 @@ class GeminiUsageMetadata
     public function getModalityCount(array $details, string $modality): int
     {
         // $details は [['modality' => 'TEXT', 'tokenCount' => 100], ...] という構造
-        return collect($details)->firstWhere('modality', strtoupper($modality))['tokenCount'] ?? 0;
+        $target = collect($details)->firstWhere('modality', strtoupper($modality));
+
+        if (is_array($target) && isset($target['tokenCount']) && is_numeric($target['tokenCount'])) {
+            return (int) $target['tokenCount'];
+        }
+
+        return 0;
     }
 
     /**
-     * DB保存用またはAPIレスポンス用の配列に変換
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return [
-            'total'    => $this->totalTokenCount,
-            'thoughts' => $this->thoughtsTokenCount,
-            'breakdown' => [
-                'prompt'     => $this->formatPhase($this->promptTokenCount, $this->promptDetails),
-                'cache'      => $this->formatPhase($this->cachedContentTokenCount, $this->cacheDetails),
-                'candidates' => $this->formatPhase($this->candidatesTokenCount, $this->candidatesDetails),
-                'tool_use'   => $this->formatPhase($this->toolUsePromptTokenCount, $this->toolUseDetails),
-            ],
-        ];
-    }
-
-    /**
-     * フェーズごとの詳細を整形
-     * @param int $total
-     * @param array<int, array<string, mixed>> $details
-     * @return array<string, int>
-     */
-    private function formatPhase(int $total, array $details): array
-    {
-        return [
-            'total' => $total,
-            'text'  => $this->getModalityCount($details, 'TEXT'),
-            'video' => $this->getModalityCount($details, 'VIDEO'),
-            'audio' => $this->getModalityCount($details, 'AUDIO'),
-            'image' => $this->getModalityCount($details, 'IMAGE'),
-            'doc'   => $this->getModalityCount($details, 'DOCUMENT'),
+            'prompt_token_count'             => $this->promptTokenCount,
+            'cached_content_token_count'     => $this->cachedContentTokenCount,
+            'candidates_token_count'         => $this->candidatesTokenCount,
+            'tool_use_prompt_token_count'    => $this->toolUsePromptTokenCount,
+            'thoughts_token_count'           => $this->thoughtsTokenCount,
+            'total_token_count'              => $this->totalTokenCount,
+            'prompt_tokens_details'          => $this->promptDetails,
+            'cache_tokens_details'           => $this->cacheDetails,
+            'candidates_tokens_details'      => $this->candidatesDetails,
+            'tool_use_prompt_tokens_details' => $this->toolUseDetails,
         ];
     }
 }

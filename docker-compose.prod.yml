@@ -1,47 +1,33 @@
 services:
+    tubechef-web:
+        image: nginx:alpine
+        ports:
+            - "80:80"
+        volumes:
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - ./public:/var/www/html/public
+        depends_on:
+            - tubechef-app
+        networks:
+            - tubechef-network
     tubechef-app:
         build:
             context: .
-            dockerfile: Dockerfile
-
-        ports:
-            - "8001:80"
-        environment:
-            LARAVEL_SAIL: 1
-        volumes:
-            - ".:/var/www/html"
+            dockerfile: Dockerfile.prod
+        env_file:
+            - .env
         networks:
             - tubechef-network
         depends_on:
             - tubechef-mysql
             - tubechef-redis
-
-    tubechef-mysql:
-        image: 'mysql/mysql-server:8.0'
-        environment:
-            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
-            MYSQL_DATABASE: '${DB_DATABASE}'
-            MYSQL_USER: '${DB_USERNAME}'
-            MYSQL_PASSWORD: '${DB_PASSWORD}'
-        volumes:
-            - 'tubechef-mysql-data:/var/lib/mysql'
-        networks:
-            - tubechef-network
-
-    tubechef-redis:
-        image: 'redis:alpine'
-        volumes:
-            - 'tubechef-redis-data:/data'
-        networks:
-            - tubechef-network
-
     tubechef-worker:
         build:
             context: .
             dockerfile: Dockerfile
         restart: always
-        entrypoint: ["php", "/var/www/html/artisan", "queue:work"]
-        command: ["--tries=3", "--memory=128", "--timeout=60"]
+        entrypoint: [ "php", "/var/www/html/artisan", "queue:work" ]
+        command: [ "--tries=3", "--memory=128", "--timeout=60" ]
         volumes:
             - ".:/var/www/html"
         networks:
@@ -49,6 +35,28 @@ services:
         depends_on:
             - tubechef-mysql
             - tubechef-redis
+    ai-recipe-service:
+        build:
+            context: ./ai-recipe-service
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        networks:
+            - tubechef-network
+    tubechef-mysql:
+        image: "mysql/mysql-server:8.0"
+        env_file:
+            - .env
+        volumes:
+            - "tubechef-mysql-data:/var/lib/mysql"
+        networks:
+            - tubechef-network
+    tubechef-redis:
+        image: "redis:alpine"
+        volumes:
+            - "tubechef-redis-data:/data"
+        networks:
+            - tubechef-network
 
 networks:
     tubechef-network:

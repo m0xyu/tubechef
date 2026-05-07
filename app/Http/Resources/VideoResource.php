@@ -42,16 +42,13 @@ class VideoResource extends JsonResource
             'thumbnail_url' => $this->thumbnail_url,
             'duration' => $this->duration,
             'published_at' => $this->published_at,
-            'channel' => new ChannelResource($this->whenLoaded('channel')),
+            'channel' => new ChannelResource($this->channel),
             'recipe_generation_status' => $this->recipe_generation_status,
             'recipe_generation_status_message' => $this->recipe_generation_status_message,
             'view_count' => $this->view_count,
             'like_count' => $this->like_count,
             'comment_count' => $this->comment_count,
             'topic_categories' => $this->topic_categories,
-            'recipe_slug' => $this->resource->relationLoaded('recipe') && $this->recipe
-                ? $this->recipe->slug
-                : null,
         ];
     }
 }

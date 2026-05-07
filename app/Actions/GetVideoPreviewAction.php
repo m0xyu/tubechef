@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Config\GeminiConfig;
 use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Models\Video;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class GetVideoPreviewAction
 {
+    const VIDEO_SECOND_LIMIT = 60;
     public function __construct(
         private FetchYouTubeMetadataAction $fetchYouTubeMetadata
     ) {}
@@ -25,8 +27,7 @@ class GetVideoPreviewAction
      */
     public function execute(YouTubeVideoId $videoId): Video
     {
-        $video = Video::where('video_id', (string)$videoId)->with(['recipe'])->first();
-        if ($video) {
+        if ($video = Video::where('video_id', (string)$videoId)->with(['recipe'])->first()) {
             return $video;
         }
 
@@ -35,9 +36,38 @@ class GetVideoPreviewAction
         $invalidError = $this->getInvalidReason($metadata);
 
         if ($invalidError) {
-            return $this->createInvalidVideo($metadata, $invalidError);
+            return $this->storeAsInvalid($metadata, $invalidError);
         }
 
+        return $this->makeUnsavedVideo($metadata);
+    }
+
+    /**
+     * 動画がレシピ生成に適しているか判定する
+     * @param YouTubeVideoData $metadata
+     * @return VideoError|null
+     */
+    private function getInvalidReason(YouTubeVideoData $metadata): ?VideoError
+    {
+        if (!in_array('Food', $metadata->topicCategories ?? [])) {
+            return VideoError::NOT_A_FOOD_CATEGORY;
+        }
+
+        // 2. 短すぎる（Shorts相当）
+        if ($metadata->durationSeconds <= self::VIDEO_SECOND_LIMIT) {
+            return VideoError::VIDEO_TOO_SHORT;
+        }
+
+        return null;
+    }
+
+    /**
+     * 新規動画の未保存インスタンスを生成する
+     * @param YouTubeVideoData $metadata
+     * @return Video
+     */
+    private function makeUnsavedVideo(YouTubeVideoData $metadata): Video
+    {
         return (new Video())->forceFill([
             'video_id'         => $metadata->videoId,
             'title'            => $metadata->title,
@@ -53,36 +83,20 @@ class GetVideoPreviewAction
     }
 
     /**
-     * 不適格な理由を判定する
+     * 不適格な動画を「生成不可」として永続化する
      * @param YouTubeVideoData $metadata
-     * @return VideoError|null
-     */
-    private function getInvalidReason(YouTubeVideoData $metadata): ?VideoError
-    {
-        if (!in_array('Food', $metadata->topicCategories ?? [])) {
-            return VideoError::NOT_A_FOOD_CATEGORY;
-        }
-
-        // 2. 短すぎる（Shorts相当）
-        if ($metadata->durationSeconds <= 60) {
-            return VideoError::VIDEO_TOO_SHORT;
-        }
-
-        return null;
-    }
-
-    /**
-     * 不適格ん動画でを「生成不可」として永続化する
-     * @param YouTubeVideoData $metadata 
+     * @param VideoError $error
      * @return Video
      */
-    private function createInvalidVideo(YouTubeVideoData $metadata, VideoError $error): Video
+    private function storeAsInvalid(YouTubeVideoData $metadata, VideoError $error): Video
     {
         return DB::transaction(function () use ($metadata, $error) {
             $channel = Channel::firstOrCreate(
                 ['channel_id' => $metadata->channelId],
                 ['name' => $metadata->channelName]
             );
+
+            $maxRetryCount = GeminiConfig::retryCount();
 
             return Video::create([
                 'video_id'         => $metadata->videoId,
@@ -96,7 +110,7 @@ class GetVideoPreviewAction
                 'topic_categories' => $metadata->topicCategories,
                 'recipe_generation_status' => RecipeGenerationStatus::FAILED,
                 'recipe_generation_error_message' => (new VideoException($error))->getMessage(),
-                'generation_retry_count' => config('services.gemini.retry_count', 2) + 1,
+                'generation_retry_count' => $maxRetryCount + 1,
             ]);
         });
     }

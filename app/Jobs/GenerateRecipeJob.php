@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\GenerateRecipeAction;
+use App\Config\GeminiConfig;
 use App\Enums\Errors\RecipeError;
 use App\Enums\RecipeGenerationStatus;
 use App\Exceptions\RecipeException;
@@ -11,6 +12,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -28,10 +31,7 @@ class GenerateRecipeJob implements ShouldQueue
     /** @var int */
     public int $backoff = 10;
 
-    /**
-     * @var Video $video
-     */
-    protected $video;
+    protected Video $video;
 
     /**
      * Create a new job instance.
@@ -40,6 +40,18 @@ class GenerateRecipeJob implements ShouldQueue
     public function __construct(Video $video)
     {
         $this->video = $video;
+    }
+
+    /**
+     * Get the middleware the job should pass through.
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [
+            new RateLimited('gemini-generator'),
+            (new WithoutOverlapping('recipe_gen_video_' . $this->video->id))->dontRelease(),
+        ];
     }
 
     /**
@@ -75,10 +87,11 @@ class GenerateRecipeJob implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
-        $retryLimit = config('services.gemini.retry_count', 2);
+        $retryLimit = GeminiConfig::DEFAULT_RETRY_COUNT;
 
         $isFatal = ($exception instanceof RecipeException && $exception->error === RecipeError::NOT_A_RECIPE);
-        $newCount = $isFatal ? $retryLimit + 1 : $this->video->generation_retry_count + 1;
+        $currentRetryCount = (int) ($this->video->generation_retry_count ?? 0);
+        $newCount = $isFatal ? $retryLimit + 1 : $currentRetryCount + 1;
 
         $this->video->update([
             'recipe_generation_status' => RecipeGenerationStatus::FAILED,

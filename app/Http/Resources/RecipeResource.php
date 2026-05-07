@@ -13,6 +13,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string|null $cooking_time
  * @property string|null $serving_size
  * @property-read \App\Models\Video|null $video
+ * @property-read \App\Models\Dish|null $dish
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeIngredient[] $ingredients
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeStep[] $steps
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\RecipeTip[] $tips
  */
 class RecipeResource extends JsonResource
 {
@@ -30,11 +34,11 @@ class RecipeResource extends JsonResource
             'summary' => $this->summary,
             'cooking_time' => $this->cooking_time,
             'serving_size' => $this->serving_size,
-            'ingredients' => RecipeIngredientResource::collection($this->whenLoaded('ingredients')),
-            'steps' => RecipeStepResource::collection($this->whenLoaded('steps')),
-            'tips' => RecipeTipResource::collection($this->whenLoaded('tips')),
-            'dish' => new DishResource($this->whenLoaded('dish')),
-            'video' => new VideoResource($this->whenLoaded('video')),
+            'ingredients' => RecipeIngredientResource::collection($this->ingredients),
+            'steps' => RecipeStepResource::collection($this->steps),
+            'tips' => RecipeTipResource::collection($this->tips),
+            'dish' => new DishResource($this->dish),
+            'video' => new VideoResource($this->video),
             'channel' => $this->video?->channel
                 ? new ChannelResource($this->video->channel)
                 : null,

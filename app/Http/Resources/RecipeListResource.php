@@ -7,13 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property int $id
- * @property int|null $cooking_time
  * @property string $title
  * @property string $slug
  * @property string $thumbnail_url
+ * @property int|null $cooking_time
  * @property string $channel_name
+ * @property string|null $dish_name
  * @property \App\Models\Video|null $video
  * @property DishResource|null $dish
+ * 
  */
 class RecipeListResource extends JsonResource
 {
@@ -25,13 +27,15 @@ class RecipeListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'slug' => $this->slug,
+            'id'            => $this->id,
+            'title'         => $this->title,
+            'slug'          => $this->slug,
             'thumbnail_url' => $this->video?->thumbnail_url,
-            'cooking_time' => $this->cooking_time,
-            'channel_name' => $this->video?->channel?->name,
-            'dish' => new DishResource($this->whenLoaded('dish')),
+            'cooking_time'  => $this->cooking_time,
+            'channel_name'  => $this->video?->channel?->name,
+            'dish' => [
+                'name' => $this->dish?->name,
+            ],
         ];
     }
 }

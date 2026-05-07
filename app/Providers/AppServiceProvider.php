@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Infrastructure\Gemini\GeminiApiClient;
+use App\Infrastructure\YouTube\YouTubeApiClient;
+use App\Repositories\Contracts\RecipeRepositoryInterface;
+use App\Repositories\RecipeRepository;
+use App\Services\LLM\GoLLMService;
+use App\Services\LLM\LLMServiceInterface;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -9,12 +15,41 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
+    const YOUTUBE_API_RATE_LIMIT = 10; // 1ユーザー1分間に10回
+    const GEMINI_API_RATE_LIMIT = 3; // 1ユーザー1分間
     /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(YouTubeApiClient::class, function ($app) {
+            $baseUrlRaw = config('services.youtube.base_url');
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : '';
+            $apiKeyRaw = config('services.google.api_key');
+            $apiKey = is_string($apiKeyRaw) ? $apiKeyRaw : '';
+            return new YouTubeApiClient($baseUrl, $apiKey);
+        });
+
+        $this->app->singleton(GeminiApiClient::class, function ($app) {
+            $baseUrlRaw = config('services.gemini.base_url');
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : '';
+            $apiKeyRaw = config('services.gemini.api_key');
+            $apiKey = is_string($apiKeyRaw) ? $apiKeyRaw : '';
+            $modelRaw = config('services.gemini.flash_model');
+            $model = is_string($modelRaw) ? $modelRaw : '';
+            return new GeminiApiClient(
+                baseUrl: $baseUrl,
+                apiKey: $apiKey,
+                model: $model
+            );
+        });
+
+        $this->app->bind(RecipeRepositoryInterface::class, RecipeRepository::class);
+        $this->app->bind(LLMServiceInterface::class, function () {
+            $baseUrlRaw = config('services.go_llm.base_url');
+            $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : 'http://localhost:3000';
+            return new GoLLMService($baseUrl);
+        });
     }
 
     /**
@@ -24,12 +59,19 @@ class AppServiceProvider extends ServiceProvider
     {
         // レシピプレビュー（YouTube API）の制限: 1ユーザー1分間に10回
         RateLimiter::for('youtube-api', function (Request $request) {
-            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(self::YOUTUBE_API_RATE_LIMIT)->by($request->user()?->id ?: $request->ip());
         });
 
         // レシピ生成（Gemini API）の制限: 1ユーザー1分間に3回
-        RateLimiter::for('gemini-generator', function (Request $request) {
-            return Limit::perMinute(3)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('gemini-generator', function (mixed $origin) {
+            // HTTP リクエストからの呼び出し（Web API 経由など）
+            if ($origin instanceof Request) {
+                return Limit::perMinute(self::GEMINI_API_RATE_LIMIT)
+                    ->by($origin->user()?->id ?: $origin->ip());
+            }
+
+            // ジョブからの呼び出し（GenerateRecipeJob）
+            return Limit::perMinute(self::GEMINI_API_RATE_LIMIT)->by('gemini-api-job-global');
         });
     }
 }

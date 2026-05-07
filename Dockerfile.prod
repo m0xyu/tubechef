@@ -1,0 +1,32 @@
+FROM php.8.4-fpm-alpine
+
+RUN apk add --no-cache \
+    zip \
+    unzip \
+    curl \
+    git \
+    libpng-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    linux-headers
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 作業ディレクトリの設定
+WORKDIR /var/www/html
+
+COPY . .
+
+# Composerで依存関係をインストール（本番環境用のオプションを使用）
+RUN composer install --optimize-autoloader --no-dev
+
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
