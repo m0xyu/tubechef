@@ -84,9 +84,12 @@ prod-optimize:
 
 prod-deploy: prod-build prod-up
 	@echo "⏳ Waiting for MySQL to initialize..."
-	@sleep 15
+	@sleep 10
 	@$(MAKE) prod-migrate
+	docker exec tubechef-tubechef-app-1 php artisan config:clear
 	@$(MAKE) prod-optimize
+	docker exec tubechef-tubechef-worker-1 php artisan queue:restart
+	docker restart tubechef-gateway-1
 	@echo "🚀 Deployment completed successfully!"
 
 prod-bash:

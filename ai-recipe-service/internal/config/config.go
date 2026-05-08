@@ -20,10 +20,10 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		Port:          getEnv("PORT", "3000"),
+		Port:          getEnv("GO_PORT", "3000"),
 		GeminiAPIKey:  os.Getenv("GEMINI_API_KEY"),
 		GeminiBaseURL: getEnv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com"),
-		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+		GeminiModel:   getEnv("GEMINI_FLASH_MODEL", "gemini-2.5-flash"),
 	}
 
 	if err := cfg.validate(); err != nil {
