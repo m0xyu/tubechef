@@ -28,7 +28,7 @@ class RecipeObserver
      */
     public function deleted(Recipe $recipe): void
     {
-        //
+        Cache::tags(['recipes'])->flush();
     }
 
     /**
@@ -36,7 +36,7 @@ class RecipeObserver
      */
     public function restored(Recipe $recipe): void
     {
-        //
+        Cache::tags(['recipes'])->flush();
     }
 
     /**
