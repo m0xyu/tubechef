@@ -47,9 +47,9 @@ type generateResponse struct {
 }
 
 type metadataResponse struct {
-	ModelVersion string                  `json:"model_version"`
-	FinishReason string                  `json:"finish_reason"`
-	Usage        domain.UsageMetadata    `json:"usage"`
+	ModelVersion string               `json:"model_version"`
+	FinishReason string               `json:"finish_reason"`
+	Usage        domain.UsageMetadata `json:"usage"`
 }
 
 func (h *GenerateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

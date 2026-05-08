@@ -8,11 +8,9 @@ var (
 	// ErrInternalServerError will throw if any the Internal Server Error happen
 	ErrInternalServerError = errors.New("internal Server Error")
 
-	//recipe errors
 	ErrNotRecipeError   = errors.New("料理カテゴリ外のため、生成対象外です。")
 	ErrGenerationFailed = errors.New("AIによるレシピ生成に失敗しました。")
 
-	// llm errors
 	ErrInvalidArgument    = errors.New("リクエストの形式が正しくありません。")
 	ErrFailedPrecondition = errors.New("課金設定またはリージョンの制限により利用できません。")
 	ErrPermissionDenied   = errors.New("APIキーの権限が不足しています。")

@@ -29,10 +29,10 @@ type responseSchema struct {
 }
 
 type property struct {
-	Type        string              `json:"type"`
-	Description string              `json:"description,omitempty"`
-	Nullable    bool                `json:"nullable,omitempty"`
-	Items       *itemSchema         `json:"items,omitempty"`
+	Type        string      `json:"type"`
+	Description string      `json:"description,omitempty"`
+	Nullable    bool        `json:"nullable,omitempty"`
+	Items       *itemSchema `json:"items,omitempty"`
 }
 
 type itemSchema struct {
@@ -106,8 +106,8 @@ func buildResponseSchema() responseSchema {
 				Items: &itemSchema{
 					Type: "object",
 					Properties: map[string]property{
-						"description":          {Type: "string", Description: "特に大事なコツやポイントを最大5つまで"},
-						"related_step_number":  {Type: "integer", Nullable: true},
+						"description":           {Type: "string", Description: "特に大事なコツやポイントを最大5つまで"},
+						"related_step_number":   {Type: "integer", Nullable: true},
 						"start_time_in_seconds": {Type: "integer", Nullable: true, Description: "コツが紹介される開始時間。不明な場合はnull"},
 					},
 					Required: []string{"description"},

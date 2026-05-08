@@ -30,7 +30,7 @@ type Ingredient struct {
 }
 
 type RecipeStep struct {
-	StepNumber         int  `json:"step_number"`
+	StepNumber         int    `json:"step_number"`
 	Description        string `json:"description"`
 	StartTimeInSeconds *int   `json:"start_time_in_seconds"`
 	EndTimeInSeconds   *int   `json:"end_time_in_seconds"`
