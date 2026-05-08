@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Observers\RecipeObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Recipe whereVideoId($value)
  * @mixin \Eloquent
  */
+#[ObservedBy(RecipeObserver::class)]
 class Recipe extends Model
 {
     /** @use HasFactory<\Database\Factories\RecipeFactory> */
