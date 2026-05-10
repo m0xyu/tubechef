@@ -10,8 +10,6 @@ import (
 	"github.com/m0xyu/tubechef/ai-recipe-service/internal/config"
 )
 
-const requestTimeout = 60 * time.Second
-
 // Client は domain.LLMClient を実装する
 type Client struct {
 	httpClient *http.Client
@@ -21,8 +19,9 @@ type Client struct {
 }
 
 func NewClient(cfg *config.Config) *Client {
+	timeout := time.Duration(cfg.GeminiRequestTimeoutSec) * time.Second
 	return &Client{
-		httpClient: &http.Client{Timeout: requestTimeout},
+		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    cfg.GeminiBaseURL,
 		apiKey:     cfg.GeminiAPIKey,
 		model:      cfg.GeminiModel,
