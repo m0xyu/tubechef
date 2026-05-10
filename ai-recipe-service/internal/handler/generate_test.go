@@ -101,6 +101,41 @@ func TestGenerateHandler_RateLimit(t *testing.T) {
 	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 }
 
+func TestGenerateHandler_ErrorCode(t *testing.T) {
+	tests := []struct {
+		name          string
+		err           error
+		wantStatus    int
+		wantErrorCode string
+	}{
+		{"not_a_recipe", domain.ErrNotRecipeError, http.StatusUnprocessableEntity, "not_a_recipe"},
+		{"resource_exhausted", domain.ErrResourceExhausted, http.StatusTooManyRequests, "resource_exhausted"},
+		{"permission_denied", domain.ErrPermissionDenied, http.StatusForbidden, "permission_denied"},
+		{"unavailable", domain.ErrUnavailable, http.StatusServiceUnavailable, "unavailable"},
+		{"generation_failed", domain.ErrGenerationFailed, http.StatusInternalServerError, "generation_failed"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &testutil.MockRecipeGenerator{Err: tt.err}
+			h := handler.NewGenerateHandler(mock)
+
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, newRequest(t, map[string]any{
+				"video_id": "abc123",
+				"title":    "テスト動画",
+			}))
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+
+			var resp utils.Response
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+			assert.False(t, resp.Success)
+			assert.Equal(t, tt.wantErrorCode, resp.ErrorCode)
+		})
+	}
+}
+
 func TestGenerateHandler_InvalidJSON(t *testing.T) {
 	mock := &testutil.MockRecipeGenerator{}
 	h := handler.NewGenerateHandler(mock)

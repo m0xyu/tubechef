@@ -9,10 +9,11 @@ import (
 )
 
 type Response struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Success   bool   `json:"success"`
+	Message   string `json:"message"`
+	Data      any    `json:"data,omitempty"`
+	Error     string `json:"error,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
 }
 
 func SuccessResponse(w http.ResponseWriter, r *http.Request, message string, data any) {
@@ -31,6 +32,31 @@ func CreatedResponse(w http.ResponseWriter, r *http.Request, message string, dat
 		Message: message,
 		Data:    data,
 	})
+}
+
+func errorCode(err error) string {
+	switch {
+	case errors.Is(err, domain.ErrNotRecipeError):
+		return "not_a_recipe"
+	case errors.Is(err, domain.ErrGenerationFailed):
+		return "generation_failed"
+	case errors.Is(err, domain.ErrResourceExhausted):
+		return "resource_exhausted"
+	case errors.Is(err, domain.ErrInvalidArgument):
+		return "invalid_argument"
+	case errors.Is(err, domain.ErrFailedPrecondition):
+		return "failed_precondition"
+	case errors.Is(err, domain.ErrPermissionDenied):
+		return "permission_denied"
+	case errors.Is(err, domain.ErrNotFound):
+		return "not_found"
+	case errors.Is(err, domain.ErrUnavailable):
+		return "unavailable"
+	case errors.Is(err, domain.ErrDeadlineExceeded):
+		return "deadline_exceeded"
+	default:
+		return "internal_error"
+	}
 }
 
 func ErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
@@ -72,9 +98,10 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	// 2. JSONを送信
 	render.Status(r, statusCode)
 	render.JSON(w, r, Response{
-		Success: false,
-		Message: message,
-		Error:   err.Error(),
+		Success:   false,
+		Message:   message,
+		Error:     err.Error(),
+		ErrorCode: errorCode(err),
 	})
 }
 

@@ -84,6 +84,8 @@ func mapHTTPError(status int) error {
 	switch status {
 	case http.StatusBadRequest:
 		return domain.ErrInvalidArgument
+	case http.StatusUnauthorized:
+		return domain.ErrPermissionDenied
 	case http.StatusForbidden:
 		return domain.ErrPermissionDenied
 	case http.StatusNotFound:
