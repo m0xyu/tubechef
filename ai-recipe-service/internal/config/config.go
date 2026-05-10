@@ -3,15 +3,17 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port          string
-	GeminiAPIKey  string
-	GeminiBaseURL string
-	GeminiModel   string
+	Port                    string
+	GeminiAPIKey            string
+	GeminiBaseURL           string
+	GeminiModel             string
+	GeminiRequestTimeoutSec int
 }
 
 // Load は .env を読み込み（存在する場合のみ）、環境変数を Config に詰めて返す
@@ -20,10 +22,11 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		Port:          getEnv("GO_PORT", "3000"),
-		GeminiAPIKey:  os.Getenv("GEMINI_API_KEY"),
-		GeminiBaseURL: getEnv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com"),
-		GeminiModel:   getEnv("GEMINI_FLASH_MODEL", "gemini-2.5-flash"),
+		Port:                    getEnv("GO_PORT", "3000"),
+		GeminiAPIKey:            os.Getenv("GEMINI_API_KEY"),
+		GeminiBaseURL:           getEnv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com"),
+		GeminiModel:             getEnv("GEMINI_FLASH_MODEL", "gemini-2.5-flash"),
+		GeminiRequestTimeoutSec: getEnvInt("GEMINI_REQUEST_TIMEOUT_SEC", 120),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -43,6 +46,15 @@ func (c *Config) validate() error {
 func getEnv(key, defaultValue string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
 	}
 	return defaultValue
 }

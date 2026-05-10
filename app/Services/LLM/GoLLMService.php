@@ -17,7 +17,7 @@ class GoLLMService implements LLMServiceInterface
 
     public function generate(LLMRequestData $request): LLMResponseData
     {
-        $response = Http::timeout(360)
+        $response = Http::timeout(180)
             ->post("{$this->baseUrl}/generate", [
                 'video_id'    => $request->videoId,
                 'title'       => $request->title,
