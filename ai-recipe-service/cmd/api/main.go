@@ -37,7 +37,7 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(180 * time.Second))
+	r.Use(middleware.Timeout(300 * time.Second))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -51,8 +51,11 @@ func main() {
 
 	// --- サーバー起動（Graceful Shutdown対応）---
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      310 * time.Second,
 	}
 
 	go func() {
@@ -69,13 +72,10 @@ func main() {
 
 	slog.Info("shutting down server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("forced shutdown", "error", err)
-		cancel()
-		os.Exit(1)
-
 	}
-	cancel()
 	slog.Info("server stopped")
 }
