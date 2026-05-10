@@ -10,7 +10,7 @@ import (
 	"github.com/m0xyu/tubechef/ai-recipe-service/internal/config"
 )
 
-const requestTimeout = 180 * time.Second
+const requestTimeout = 60 * time.Second
 
 // Client は domain.LLMClient を実装する
 type Client struct {
