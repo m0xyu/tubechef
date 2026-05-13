@@ -12,11 +12,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 describe('GenerateRecipeActionTest', function () {
-
     test('レシピが正常に保存される', function () {
         $data = [
             'is_recipe' => true,
             'title' => 'Delicious Curry',
+            'summary' => 'A tasty curry recipe.',
             'ingredients' => [
                 ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat', 'order' => 1],
             ],
@@ -55,6 +55,7 @@ describe('GenerateRecipeActionTest', function () {
         $data = [
             'is_recipe' => false,
             'title' => 'Delicious Curry',
+            'summary' => 'A tasty curry recipe.',
             'ingredients' => [
                 ['name' => 'Chicken', 'quantity' => '200g', 'group' => 'Meat', 'order' => 1],
             ],
@@ -90,4 +91,3 @@ describe('GenerateRecipeActionTest', function () {
         }
     });
 });
-

@@ -84,4 +84,13 @@ describe('FetchYouTubeMetadataActionTest', function () {
         expect(fn() => $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
             ->toThrow(VideoException::class, VideoError::NOT_A_VIDEO->message());
     });
+
+    test('異常：APIエラーの場合', function () {
+        Http::fake([
+            '*/youtube/v3/videos*' => Http::response([], 500),
+        ]);
+
+        expect(fn() => $this->action->execute(YouTubeVideoId::fromUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')))
+            ->toThrow(VideoException::class, VideoError::FETCH_FAILED->message());
+    });
 });

@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Dtos\YouTubeVideoData;
 use App\Enums\Errors\VideoError;
 use App\Exceptions\VideoException;
+use App\Exceptions\YouTubeApiException;
 use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\ValueObjects\YouTubeVideoId;
+use Illuminate\Support\Arr;
 
 class FetchYouTubeMetadataAction
 {
@@ -27,9 +31,15 @@ class FetchYouTubeMetadataAction
      */
     public function execute(YouTubeVideoId $videoId, array $parts = self::PARTS_PREVIEW): YouTubeVideoData
     {
-        $item = $this->youtubeClient->getVideo((string)$videoId, $parts);
+        try {
+            $item = $this->youtubeClient->getVideo((string)$videoId, $parts);
+        } catch (YouTubeApiException $e) {
+            // APIエラーの場合は、動画が見つからない、非公開、またはその他の問題が考えられるため、VideoExceptionに変換してスロー
+            throw new VideoException(VideoError::FETCH_FAILED);
+        }
 
-        if (($item['kind']) !== 'youtube#video') {
+        $kind = Arr::get($item, 'kind');
+        if ($kind !== 'youtube#video') {
             throw new VideoException(VideoError::NOT_A_VIDEO);
         }
 

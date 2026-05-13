@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Dtos\GeneratedRecipeData;
@@ -12,26 +14,24 @@ use App\Services\LLM\LLMServiceInterface;
 use App\Services\RecipeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Throwable;
 
 class GenerateRecipeAction
 {
-    protected LLMServiceInterface $llmService;
 
     public function __construct(
-        LLMServiceInterface $llmService,
-        protected RecipeService $recipeService,
-        protected VideoMetadataUpdateAction $videoMetadataUpdateAction
-
-    ) {
-        $this->llmService = $llmService;
-    }
+        private readonly LLMServiceInterface $llmService,
+        private readonly RecipeService $recipeService,
+        private readonly VideoMetadataUpdateAction $videoMetadataUpdateAction,
+        private readonly DenormalizerInterface $denormalizer,
+    ) {}
 
     /**
      * 動画のタイトルと説明文からレシピを生成し、保存する
      * @param Video $video
      * @return Recipe
-     * @throws \RuntimeException
+     * @throws RecipeException
      */
     public function execute(Video $video): Recipe
     {
@@ -48,7 +48,8 @@ class GenerateRecipeAction
             throw new RecipeException(RecipeError::GENERATION_FAILED, previous: $e);
         }
 
-        $recipeData = GeneratedRecipeData::fromArray($result->data);
+        $recipeData = $this->denormalizer->denormalize($result->data, GeneratedRecipeData::class);
+
         $metadataForUpdate = array_merge($result->metadata, [
             'evaluated_at' => now()->toDateTimeString(),
         ]);
