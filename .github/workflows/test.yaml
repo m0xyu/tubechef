@@ -29,12 +29,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          # ここに 'mbstring' などが含まれているのはGoodです
           extensions:
             dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath,
             intl, fileinfo
           coverage: none
-          # 【追加】これを入れるだけでComposerのインストールが劇的に速くなります
           tools: composer:v2
 
       - name: Get composer cache directory
@@ -86,13 +84,12 @@ jobs:
         run: ./vendor/bin/pest
   go-tests:
     runs-on: ubuntu-latest
-    # 💡 Goのコードは ai-recipe-service ディレクトリ配下にあるため、作業ディレクトリを指定します
+    #作業ディレクトリを指定
     defaults:
       run:
         working-directory: ./ai-recipe-service
 
     steps:
-      # 1. リポジトリのコードをチェックアウト
       - uses: actions/checkout@v4
 
       # 2. Go環境のセットアップとキャッシュの設定
@@ -102,10 +99,10 @@ jobs:
           go-version: "stable" # 常に最新の安定版Goを使用
           cache-dependency-path: ai-recipe-service/go.sum
 
-      # 3. Goモジュールのダウンロード
+      # Goモジュールのダウンロード
       - name: Install Dependencies
         run: go mod download
 
-      # 4. Makefile を使ってテストを実行
+      # Makefile を使ってテストを実行
       - name: Run Go Tests
         run: make test
