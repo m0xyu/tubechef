@@ -26,33 +26,25 @@ class GoLLMService implements LLMServiceInterface
             ]);
 
         if ($response->failed()) {
-            $body = $response->json();
-            $errorCode = is_array($body) ? ($body['error_code'] ?? 'unknown') : 'unknown';
             Log::error('GoLLMService HTTP error', [
                 'status'     => $response->status(),
-                'error_code' => $errorCode,
+                'error_code' => $response->json('error_code', 'unknown'),
                 'video_id'   => $request->videoId,
             ]);
             throw new RecipeException(RecipeError::GENERATION_FAILED);
         }
 
-        /** @var array<string, mixed> $body */
-        $body = $response->json();
-
-        /** @var array<string, mixed> $data */
-        $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-
         /** @var array<string, mixed> $recipe */
-        $recipe = is_array($data['recipe'] ?? null) ? $data['recipe'] : [];
+        $recipe = $response->json('data.recipe', []);
 
-        /** @var array<string, mixed> $metadata */
-        $metadata = is_array($data['metadata'] ?? null) ? $data['metadata'] : [];
+        $modelVersion = $response->json('data.metadata.model_version', 'unknown');
+        \assert(is_string($modelVersion));
 
-        $modelVersion = is_string($metadata['model_version'] ?? null) ? $metadata['model_version'] : 'unknown';
-        $finishReason = is_string($metadata['finish_reason'] ?? null) ? $metadata['finish_reason'] : 'FINISH_REASON_UNSPECIFIED';
+        $finishReason = $response->json('data.metadata.finish_reason', 'FINISH_REASON_UNSPECIFIED');
+        \assert(is_string($finishReason));
 
         /** @var array<string, mixed> $usageData */
-        $usageData = is_array($metadata['usage'] ?? null) ? $metadata['usage'] : [];
+        $usageData = $response->json('data.metadata.usage', []);
 
         return new LLMResponseData(
             data: $recipe,

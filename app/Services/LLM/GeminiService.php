@@ -12,6 +12,7 @@ use App\Services\LLM\Prompts\RecipePrompt;
 use App\Services\LLM\Schemas\RecipeSchema;
 use App\ValueObjects\GeminiResponseCandidate;
 use App\ValueObjects\GeminiUsageMetadata;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 
 class GeminiService implements LLMServiceInterface
@@ -67,17 +68,14 @@ class GeminiService implements LLMServiceInterface
      */
     private function processResponse(array $responseData, string $videoUrl): LLMResponseData
     {
-        /** @var array<mixed> $candidatesRaw */
-        $candidatesRaw = is_array($responseData['candidates'] ?? null) ? $responseData['candidates'] : [];
-
         /** @var array<string, mixed> $candidateData */
-        $candidateData = (isset($candidatesRaw[0]) && is_array($candidatesRaw[0])) ? $candidatesRaw[0] : [];
+        $candidateData = Arr::get($responseData, 'candidates.0', []);
 
         /** @var array<string, mixed> $usageData */
-        $usageData = is_array($responseData['usageMetadata'] ?? null) ? $responseData['usageMetadata'] : [];
+        $usageData = Arr::get($responseData, 'usageMetadata', []);
 
-        $modelVersionRaw = $responseData['modelVersion'] ?? 'unknown';
-        $modelVersion = is_string($modelVersionRaw) ? $modelVersionRaw : 'unknown';
+        $modelVersion = Arr::get($responseData, 'modelVersion', 'unknown');
+        \assert(is_string($modelVersion));
 
         $usage = GeminiUsageMetadata::fromArray($usageData);
         $candidate = GeminiResponseCandidate::fromResponse($candidateData, $usage, $modelVersion);
@@ -89,15 +87,8 @@ class GeminiService implements LLMServiceInterface
             throw new GeminiException(GeminiError::INTERNAL_ERROR);
         }
 
-        /** @var array<string, mixed> $content */
-        $content = $candidate->content;
-
-        /** @var array<mixed> $parts */
-        $parts = is_array($content['parts'] ?? null) ? $content['parts'] : [];
-
-        $firstPart = $parts[0] ?? [];
-        $textRaw = is_array($firstPart) ? ($firstPart['text'] ?? '') : '';
-        $text = is_string($textRaw) ? $textRaw : '';
+        $text = Arr::get($candidate->content, 'parts.0.text', '');
+        \assert(is_string($text));
 
         $decoded = json_decode($text, true);
 
