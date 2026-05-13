@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\YouTube;
 
-use App\Enums\Errors\VideoError;
-use App\Exceptions\VideoException;
+use App\Exceptions\YouTubeApiException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\RequestException;
@@ -11,68 +12,53 @@ use Illuminate\Http\Client\ConnectionException;
 
 class YouTubeApiClient
 {
-    private int $retryCount;
-    private int $retryDelayMs;
-
     public function __construct(
         private readonly string $baseUrl,
         private readonly string $apiKey,
-        int $retryCount = 3,
-        int $retryDelayMs = 1000
-    ) {
-        $this->retryCount = $retryCount;
-        $this->retryDelayMs = $retryDelayMs;
-    }
+        private readonly int $retryCount = 3,
+        private readonly int $retryDelayMs = 1000
+    ) {}
 
     /**
      * YouTube APIを呼び出して動画情報を取得する例
      * @param string $videoId
      * @param array<string> $parts
-     * @return array{kind: string, id?: string, snippet?: array<string, mixed>, contentDetails?: array<string, mixed>, statistics?: array<string, mixed>, topicDetails?: array<string, mixed>}
-     * @throws VideoException
+     * @return array<string, mixed>
+     * @throws YouTubeApiException
      */
     public function getVideo(string $videoId, array $parts): array
     {
-        if (empty($videoId)) {
+        if ($videoId === '') {
             throw new \InvalidArgumentException('Video ID cannot be empty.');
         }
 
-        if (empty($parts)) {
+        if ($parts === []) {
             throw new \InvalidArgumentException('Parts parameter cannot be empty.');
         }
 
-        $params = [
+        return $this->request('videos', [
             'part' => implode(',', $parts),
             'id' => $videoId,
             'key' => $this->apiKey,
-        ];
-
-        /** @var array{kind: string, id?: string, snippet?: array<string, mixed>, contentDetails?: array<string, mixed>, statistics?: array<string, mixed>, topicDetails?: array<string, mixed>} $result */
-        $result = $this->request('videos', $params, $videoId);
-        return $result;
+        ], $videoId);
     }
 
     /**
-     * YouTube APIを呼び出してチャンネル情報を取得する例
      * @param string $channelId
-     * @return array{kind: string, id?: string, snippet?: array<string, mixed>, statistics?: array<string, mixed>}
-     * @throws VideoException
+     * @return array<string, mixed>
+     * @throws YouTubeApiException
      */
     public function getChannel(string $channelId): array
     {
-        if (empty($channelId)) {
+        if ($channelId === '') {
             throw new \InvalidArgumentException('Channel ID cannot be empty.');
         }
-        $params = [
+
+        return $this->request('channels', [
             'part' => 'snippet,statistics',
             'id' => $channelId,
             'key' => $this->apiKey,
-        ];
-
-        /** @var array{kind: string, id?: string, snippet?: array<string, mixed>, statistics?: array<string, mixed>} $result */
-        $result = $this->request('channels', $params, $channelId);
-
-        return $result;
+        ], $channelId);
     }
 
     /**
@@ -81,7 +67,7 @@ class YouTubeApiClient
      * @param array<string, string> $params
      * @param string|null $contextId
      * @return array<string, mixed>
-     * @throws VideoException
+     * @throws YouTubeApiException
      */
     private function request(string $endpoint, array $params, ?string $contextId = null): array
     {
@@ -104,37 +90,27 @@ class YouTubeApiClient
                 'context_id' => $contextId,
                 'error' => $e->getMessage()
             ]);
-            throw new VideoException(VideoError::INTERNAL_ERROR, 'Network connection failed.');
+            throw new YouTubeApiException('Network connection failed.', 0, $e);
         }
 
         if ($response->failed()) {
-            $errorBody = $response->json();
+            $errorMsgRaw = $response->json('error.message');
+            $errorMsg = is_string($errorMsgRaw) ? $errorMsgRaw : 'Unknown error';
+
             Log::error('YouTube API Fetch Failed', [
                 'status' => $response->status(),
-                'response' => $errorBody,
+                'response' => $response->json(),
                 'context_id' => $contextId
             ]);
 
-            $errorMsg = 'Unknown error';
-
-            if (
-                is_array($errorBody) &&
-                isset($errorBody['error']) &&
-                is_array($errorBody['error']) &&
-                isset($errorBody['error']['message']) &&
-                is_string($errorBody['error']['message'])
-            ) {
-                $errorMsg = $errorBody['error']['message'];
-            }
-
-            throw new VideoException(VideoError::FETCH_FAILED, $errorMsg);
+            throw new YouTubeApiException("YouTube API Error: {$errorMsg}");
         }
 
         $item = $response->json('items.0');
 
         if (!is_array($item)) {
             Log::warning('YouTube Video Not Found or Private', ['context_id' => $contextId]);
-            throw new VideoException(VideoError::FETCH_FAILED, 'No video found or video is private.');
+            throw new YouTubeApiException('No data found or it is private.');
         }
 
         /** @var array<string, mixed> $item */
