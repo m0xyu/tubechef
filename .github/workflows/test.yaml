@@ -2,9 +2,9 @@ name: Run Tests
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
 
 jobs:
   laravel-tests:
@@ -30,7 +30,8 @@ jobs:
         with:
           php-version: "8.4"
           # ここに 'mbstring' などが含まれているのはGoodです
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath,
+          extensions:
+            dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath,
             intl, fileinfo
           coverage: none
           # 【追加】これを入れるだけでComposerのインストールが劇的に速くなります
@@ -51,7 +52,8 @@ jobs:
         run: cp .env.example .env
 
       - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress
+        run:
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress
           --prefer-dist
 
       - name: Generate Key
@@ -81,4 +83,29 @@ jobs:
           DB_DATABASE: laravel_test
           DB_USERNAME: root
           DB_PASSWORD: password
+        run: ./vendor/bin/pest
+  go-tests:
+    runs-on: ubuntu-latest
+    # 💡 Goのコードは ai-recipe-service ディレクトリ配下にあるため、作業ディレクトリを指定します
+    defaults:
+      run:
+        working-directory: ./ai-recipe-service
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - uses: actions/checkout@v4
+
+      # 2. Go環境のセットアップとキャッシュの設定
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable" # 常に最新の安定版Goを使用
+          cache-dependency-path: ai-recipe-service/go.sum
+
+      # 3. Goモジュールのダウンロード
+      - name: Install Dependencies
+        run: go mod download
+
+      # 4. Makefile を使ってテストを実行
+      - name: Run Go Tests
         run: make test
