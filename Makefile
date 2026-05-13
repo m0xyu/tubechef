@@ -1,5 +1,9 @@
 .PHONY: help sail-up sail-down stan test test-coverage go-run go-lint go-build go-tidy go-test test-all prod-build prod-up prod-down prod-migrate prod-optimize prod-deploy prod-bash
 
+DEV_APP_SERVICE = laravel.test
+GO_SERVICE = ai-recipe-service
+ARGS = $(filter-out $@,$(MAKECMDGOALS))
+
 help:
 	@echo "Available commands:"
 	@echo "make sail-up                - Start Laravel Sail"
@@ -31,35 +35,35 @@ sail-down:
 
 stan:
 	@echo "Running PHPStan..."
-	@./vendor/bin/phpstan analyse -l max --memory-limit=2G
+	@docker compose exec $(DEV_APP_SERVICE) ./vendor/bin/phpstan analyse -l max --memory-limit=2G
 
 test:
 	@echo "Running tests with Laravel Sail..."
-	@php artisan test
+	@docker compose exec $(DEV_APP_SERVICE) php artisan test ${ARGS}
 
 test-coverage:
 	@echo "Running tests with coverage using Laravel Sail..."
-	@php artisan test --coverage
+	@docker compose exec $(DEV_APP_SERVICE) php artisan test --coverage
 
 # ===== Goの処理（子Makefileへ委譲！） =====
 go-run:
-	@$(MAKE) -C ai-recipe-service run
+	@$(MAKE) -C $(GO_SERVICE) run
 
 go-lint:
-	@$(MAKE) -C ai-recipe-service lint
+	@$(MAKE) -C $(GO_SERVICE) lint
 
 go-build:
-	@$(MAKE) -C ai-recipe-service build
+	@$(MAKE) -C $(GO_SERVICE) build
 
 go-tidy:
-	@$(MAKE) -C ai-recipe-service tidy
+	@$(MAKE) -C $(GO_SERVICE) tidy
 
 go-test: 
-	@$(MAKE) -C ai-recipe-service test
+	@$(MAKE) -C $(GO_SERVICE) test
 
 # ===== 全体の一括処理 =====
 test-all: test
-	@$(MAKE) -C ai-recipe-service test
+	@$(MAKE) -C $(GO_SERVICE) test 
 
 # ===== Production (本番環境用) =====
 prod-build:

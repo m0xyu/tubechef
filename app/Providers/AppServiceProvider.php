@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Infrastructure\Gemini\GeminiApiClient;
+use App\Infrastructure\Serialization\SerializerFactory;
 use App\Infrastructure\YouTube\YouTubeApiClient;
 use App\Repositories\Contracts\RecipeRepositoryInterface;
 use App\Repositories\RecipeRepository;
@@ -12,6 +13,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +54,13 @@ class AppServiceProvider extends ServiceProvider
             $baseUrl = is_string($baseUrlRaw) ? $baseUrlRaw : 'http://ai-recipe-service:3000';
             return new GoLLMService($baseUrl);
         });
+
+        $this->app->singleton(Serializer::class, function ($app) {
+            return SerializerFactory::create();
+        });
+
+        $this->app->bind(SerializerInterface::class, Serializer::class);
+        $this->app->bind(DenormalizerInterface::class, Serializer::class);
     }
 
     /**
