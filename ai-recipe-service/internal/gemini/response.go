@@ -68,7 +68,7 @@ func toModalityTokenCounts(src []apiModalityTokenCount) []domain.ModalityTokenCo
 	return result
 }
 
-func parseResponse(raw []byte) (*domain.LLMResult, error) {
+func parseResponse(raw []byte) (*domain.LLMResponse, error) {
 	var apiResp apiResponse
 	if err := json.Unmarshal(raw, &apiResp); err != nil {
 		return nil, fmt.Errorf("unmarshal api response: %w", err)
@@ -95,15 +95,9 @@ func parseResponse(raw []byte) (*domain.LLMResult, error) {
 
 	text := candidate.Content.Parts[0].Text
 
-	var recipe domain.GeneratedRecipe
-	if err := json.Unmarshal([]byte(text), &recipe); err != nil {
-		slog.Error("Gemini JSON parse error", "raw_text", text, "error", err)
-		return nil, fmt.Errorf("%w: %w", domain.ErrGenerationFailed, err)
-	}
-
-	return &domain.LLMResult{
-		Recipe: &recipe,
-		Metadata: domain.LLMMetadata{
+	return &domain.LLMResponse{
+		RawText: text,
+		Metadata: &domain.LLMMetadata{
 			ModelVersion:  apiResp.ModelVersion,
 			FinishReason:  candidate.FinishReason,
 			FinishMessage: candidate.FinishMessage,
