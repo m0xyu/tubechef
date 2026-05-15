@@ -28,9 +28,9 @@ func NewClient(cfg *config.Config) *Client {
 	}
 }
 
-// GenerateRecipe は domain.LLMClient インターフェースを実装する
-func (c *Client) GenerateRecipe(ctx context.Context, input domain.VideoInput) (*domain.LLMResult, error) {
-	payload, err := c.buildPayload(input)
+// GenerateContent は domain.LLMClient インターフェースを実装する
+func (c *Client) GenerateContent(ctx context.Context, req domain.LLMRequest) (*domain.LLMResponse, error) {
+	payload, err := c.buildPayload(req)
 	if err != nil {
 		return nil, fmt.Errorf("build payload: %w", err)
 	}
