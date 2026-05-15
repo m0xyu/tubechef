@@ -4,13 +4,25 @@ import "context"
 
 // LLMClient はLLMプロバイダーの抽象（実装はinternalに置く）
 type LLMClient interface {
-	GenerateRecipe(ctx context.Context, input VideoInput) (*LLMResult, error)
+	GenerateContent(ctx context.Context, req LLMRequest) (*LLMResponse, error)
 }
 
-// LLMResult はレシピデータとメタ情報をまとめたレスポンス
-type LLMResult struct {
-	Recipe   *GeneratedRecipe
-	Metadata LLMMetadata
+type LLMConfig struct {
+	ResponseFormat string
+	ResponseSchema any
+	ThinkingBudget *int
+}
+
+type LLMRequest struct {
+	SystemInstruction string
+	Prompt            string
+	MediaURIs         []string
+	Config            *LLMConfig
+}
+
+type LLMResponse struct {
+	RawText  string
+	Metadata *LLMMetadata
 }
 
 // LLMMetadata は Gemini の usageMetadata + modelVersion に対応

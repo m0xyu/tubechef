@@ -1,4 +1,4 @@
-package gemini
+package recipe
 
 import (
 	"fmt"
@@ -6,7 +6,10 @@ import (
 	"github.com/m0xyu/tubechef/ai-recipe-service/domain"
 )
 
-const systemInstruction = `あなたはプロの料理研究家兼データエンジニアです。`
+const (
+	systemInstruction     = `あなたはプロの料理研究家兼データエンジニアです。`
+	defaultThinkingBudget = 0
+)
 
 func buildPrompt(input domain.VideoInput) string {
 	return fmt.Sprintf(`提供される「YouTube動画（映像・音声）」および「タイトル・概要欄」を総合的に分析し、正確なレシピデータを抽出してください。

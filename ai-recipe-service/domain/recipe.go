@@ -5,7 +5,6 @@ type VideoInput struct {
 	VideoID     string
 	Title       string
 	Description string
-	DurationSec int
 }
 
 // GeneratedRecipe はLLMが生成したレシピデータ

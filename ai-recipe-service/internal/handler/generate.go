@@ -11,7 +11,7 @@ import (
 
 // RecipeGenerator はレシピ生成サービスの抽象（テスト時にモック可能）
 type RecipeGenerator interface {
-	Generate(ctx context.Context, input domain.VideoInput) (*domain.LLMResult, error)
+	Generate(ctx context.Context, input domain.VideoInput) (*domain.GeneratedRecipe, *domain.LLMMetadata, error)
 }
 
 type GenerateHandler struct {
@@ -27,7 +27,6 @@ type generateRequest struct {
 	VideoID     string `json:"video_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	DurationSec int    `json:"duration_sec"`
 }
 
 func (req *generateRequest) validate() string {
@@ -68,21 +67,20 @@ func (h *GenerateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		VideoID:     req.VideoID,
 		Title:       req.Title,
 		Description: req.Description,
-		DurationSec: req.DurationSec,
 	}
 
-	result, err := h.service.Generate(r.Context(), input)
+	recipe, metadata, err := h.service.Generate(r.Context(), input)
 	if err != nil {
 		utils.ErrorResponse(w, r, err)
 		return
 	}
 
-	utils.CreatedResponse(w, r, "レシピを生成しました", generateResponse{
-		Recipe: result.Recipe,
+	utils.SuccessResponse(w, r, "レシピを生成に成功しました", generateResponse{
+		Recipe: recipe,
 		Metadata: metadataResponse{
-			ModelVersion: result.Metadata.ModelVersion,
-			FinishReason: result.Metadata.FinishReason,
-			Usage:        result.Metadata.UsageMetadata,
+			ModelVersion: metadata.ModelVersion,
+			FinishReason: metadata.FinishReason,
+			Usage:        metadata.UsageMetadata,
 		},
 	})
 }

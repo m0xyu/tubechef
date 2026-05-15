@@ -2,6 +2,7 @@ package recipe
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -19,22 +20,42 @@ func NewService(llm domain.LLMClient) *Service {
 
 // Generate は動画メタデータからレシピを生成して返す
 // 料理動画でない場合は domain.ErrNotRecipeError を返す
-func (s *Service) Generate(ctx context.Context, input domain.VideoInput) (*domain.LLMResult, error) {
-	result, err := s.llm.GenerateRecipe(ctx, input)
+func (s *Service) Generate(ctx context.Context, input domain.VideoInput) (*domain.GeneratedRecipe, *domain.LLMMetadata, error) {
+	prompt := buildPrompt(input)
+	schema := buildResponseSchema()
+	budget := defaultThinkingBudget
+
+	result, err := s.llm.GenerateContent(ctx, domain.LLMRequest{
+		SystemInstruction: systemInstruction,
+		Prompt:            prompt,
+		MediaURIs:         []string{"https://www.youtube.com/watch?v=" + input.VideoID},
+		Config: &domain.LLMConfig{
+			ResponseFormat: "application/json",
+			ResponseSchema: schema,
+			ThinkingBudget: &budget,
+		},
+	})
+
 	if err != nil {
-		return nil, fmt.Errorf("llm.GenerateRecipe: %w", err)
+		return nil, nil, fmt.Errorf("llm.GenerateContent: %w", err)
+	}
+
+	var recipe domain.GeneratedRecipe
+	if err := json.Unmarshal([]byte(result.RawText), &recipe); err != nil {
+		slog.Error("Gemini JSON parse error", "raw_text", result.RawText, "error", err)
+		return nil, nil, fmt.Errorf("%w: %w", domain.ErrGenerationFailed, err)
 	}
 
 	slog.Info("recipe generated",
 		"video_id", input.VideoID,
 		"model", result.Metadata.ModelVersion,
 		"total_tokens", result.Metadata.UsageMetadata.TotalTokenCount,
-		"is_recipe", result.Recipe.IsRecipe,
+		"is_recipe", recipe.IsRecipe,
 	)
 
-	if !result.Recipe.IsRecipe {
-		return nil, domain.ErrNotRecipeError
+	if !recipe.IsRecipe {
+		return nil, nil, domain.ErrNotRecipeError
 	}
 
-	return result, nil
+	return &recipe, result.Metadata, nil
 }
