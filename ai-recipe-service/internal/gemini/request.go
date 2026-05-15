@@ -6,12 +6,10 @@ import (
 	"github.com/m0xyu/tubechef/ai-recipe-service/domain"
 )
 
-const youTubeVideoBaseURL = "https://www.youtube.com/watch?v="
-
 type requestPayload struct {
 	Contents          []content          `json:"contents"`
 	SystemInstruction systemInstructionP `json:"system_instruction"`
-	GenerationConfig  generationConfig   `json:"generationConfig"`
+	GenerationConfig  *generationConfig  `json:"generationConfig,omitempty"`
 }
 
 type content struct {
@@ -36,29 +34,44 @@ type thinkingConfig struct {
 }
 
 type generationConfig struct {
-	ResponseMIMEType string         `json:"responseMimeType"`
-	ResponseSchema   responseSchema `json:"responseSchema"`
-	ThinkingConfig   thinkingConfig `json:"thinkingConfig"`
+	ResponseMIMEType string          `json:"responseMimeType,omitempty"`
+	ResponseSchema   any             `json:"responseSchema,omitempty"`
+	ThinkingConfig   *thinkingConfig `json:"thinkingConfig,omitempty"`
 }
 
-func (c *Client) buildPayload(input domain.VideoInput) ([]byte, error) {
+func (c *Client) buildPayload(req domain.LLMRequest) ([]byte, error) {
+	parts := []part{
+		{Text: req.Prompt},
+	}
+
+	if len(req.MediaURIs) > 0 {
+		parts = append(parts, part{
+			FileData: &fileData{FileURI: req.MediaURIs[0]},
+		})
+	}
+
 	payload := requestPayload{
 		Contents: []content{
-			{
-				Parts: []part{
-					{Text: buildPrompt(input)},
-					{FileData: &fileData{FileURI: youTubeVideoBaseURL + input.VideoID}},
-				},
-			},
+			{Parts: parts},
 		},
 		SystemInstruction: systemInstructionP{
-			Parts: []part{{Text: systemInstruction}},
+			Parts: []part{{Text: req.SystemInstruction}},
 		},
-		GenerationConfig: generationConfig{
-			ResponseMIMEType: "application/json",
-			ResponseSchema:   buildResponseSchema(),
-			ThinkingConfig:   thinkingConfig{ThinkingBudget: 0},
-		},
+	}
+
+	if req.Config != nil {
+		genConfig := &generationConfig{
+			ResponseMIMEType: req.Config.ResponseFormat,
+			ResponseSchema:   req.Config.ResponseSchema,
+		}
+
+		if req.Config.ThinkingBudget != nil {
+			genConfig.ThinkingConfig = &thinkingConfig{
+				ThinkingBudget: *req.Config.ThinkingBudget,
+			}
+		}
+
+		payload.GenerationConfig = genConfig
 	}
 
 	return json.Marshal(payload)
