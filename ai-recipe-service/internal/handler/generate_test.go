@@ -25,18 +25,20 @@ func newRequest(t *testing.T, body any) *http.Request {
 }
 
 func TestGenerateHandler_Success(t *testing.T) {
-	mock := &testutil.MockRecipeGenerator{Result: testutil.SampleLLMResult()}
+	mock := &testutil.MockRecipeGenerator{
+		Recipe:   testutil.SampleGeneratedRecipe(),
+		Metadata: testutil.SampleLLMMetadata(),
+	}
 	h := handler.NewGenerateHandler(mock)
 
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, newRequest(t, map[string]any{
-		"video_id":     "abc123",
-		"title":        "鶏の唐揚げ",
-		"description":  "材料...",
-		"duration_sec": 600,
+		"video_id":    "abc123",
+		"title":       "鶏の唐揚げ",
+		"description": "材料...",
 	}))
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp utils.Response
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
@@ -44,7 +46,10 @@ func TestGenerateHandler_Success(t *testing.T) {
 }
 
 func TestGenerateHandler_MissingVideoID(t *testing.T) {
-	mock := &testutil.MockRecipeGenerator{}
+	mock := &testutil.MockRecipeGenerator{
+		Recipe:   testutil.SampleGeneratedRecipe(),
+		Metadata: testutil.SampleLLMMetadata(),
+	}
 	h := handler.NewGenerateHandler(mock)
 
 	w := httptest.NewRecorder()
@@ -60,7 +65,10 @@ func TestGenerateHandler_MissingVideoID(t *testing.T) {
 }
 
 func TestGenerateHandler_MissingTitle(t *testing.T) {
-	mock := &testutil.MockRecipeGenerator{}
+	mock := &testutil.MockRecipeGenerator{
+		Recipe:   testutil.SampleGeneratedRecipe(),
+		Metadata: testutil.SampleLLMMetadata(),
+	}
 	h := handler.NewGenerateHandler(mock)
 
 	w := httptest.NewRecorder()
